@@ -3,6 +3,7 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date; // TODO: You'll likely use this in this class
+import java.util.HashMap;
 
 /** Represents a gitlet commit object.
  * This Class takes care of saving to the file system the actual changes to our
@@ -26,23 +27,22 @@ public class Commit implements Serializable {
      * we can end-up in the situation that the merge-commit has 2 parents.
      */
     private String[] parents;
-    /** Array of files IDs that the Commit keeps track of. */
-    private String[] files;
+    /** Map of fileNames and corresponding sha1 */
+    private HashMap<String, String> files;
 
     public Commit(String message,
                         String author,
-                        String date,
                         String[] parents,
-                        String[] files) {
+                        HashMap<String, String> files) {
         this.author = author;
         this.message = message;
         this.parents = parents;
         this.files = files;
-        this.date = date == null ? DATE_FORMAT.format(new Date()) : date;
+        this.date = DATE_FORMAT.format(new Date(0));
         id = Utils.sha1();
     }
 
-    public String[] getFiles() {
+    public HashMap<String, String> getFiles() {
         return files;
     }
     //public String[] getParent() {

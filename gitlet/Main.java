@@ -20,7 +20,9 @@ public class Main {
                 Repository.init();
                 break;
             case "add":
-                // TODO: handle the `add [filename]` command
+                validateNumArgs("add", args, 2);
+                Repository.add(args[1]);
+                System.out.println(Repository.stagingArea.toString());
                 break;
             // TODO: FILL THE REST IN
             default:
