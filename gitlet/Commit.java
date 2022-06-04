@@ -26,13 +26,13 @@ public class Commit implements Serializable {
      * Array of parents IDs. Array because in case of branching and merging
      * we can end-up in the situation that the merge-commit has 2 parents.
      */
-    private String[] parents;
+    private String parents;
     /** Map of fileNames and corresponding sha1 */
     private HashMap<String, String> files;
 
     public Commit(String message,
                         String author,
-                        String[] parents,
+                        String parents,
                         HashMap<String, String> files) {
         this.author = author;
         this.message = message;

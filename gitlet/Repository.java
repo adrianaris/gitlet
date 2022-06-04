@@ -18,6 +18,7 @@ import static gitlet.Utils.*;
  *  @author Adrian Serbanescu
  */
 public class Repository {
+    public static String AUTHOR = "Adrian Serbanescu";
     /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
     /** The .gitlet directory. */
@@ -34,6 +35,7 @@ public class Repository {
      * Staging area is a map of fileNames, sha1 (key,value) pairs.
      */
     public static HashMap<String, String> stagingArea = new HashMap<>();
+    public static String currentBranch;
 
     public static void init() {
         if (GITLET_DIR.exists()) {
@@ -47,12 +49,13 @@ public class Repository {
         FILES.mkdir();
         Commit initCommit = new Commit(
                 "initial commit",
-                "Adrian Serbanescu",
+                AUTHOR,
                 null,
                 null);
 
         File newCommit = join(COMMITS, initCommit.id);
-        File branch = join(BRANCHES, "master");
+        currentBranch = "master";
+        File branch = join(BRANCHES, currentBranch);
         writeObject(newCommit, initCommit);
         writeContents(branch, initCommit.id);
         writeContents(head, initCommit.id);
@@ -61,8 +64,9 @@ public class Repository {
 
     public static void add(String fileName) {
         List<String> currentFiles = plainFilenamesIn(CWD);
+        Commit currentCommit = checkOutCommit(readContentsAsString(head));
         HashMap<String, String> currentCommitFileMap =
-                checkOutCommit(readContentsAsString(head));
+                currentCommit.getFiles();
         if (currentFiles == null) {
             throw new GitletException("CWD is empty");
         }
@@ -80,21 +84,39 @@ public class Repository {
         }
     }
 
+    public static void commit(String message) {
+        if (message.length() == 0) {
+            throw new GitletException("Please enter a commit message.");
+        }
+        if (stagingArea.isEmpty()) {
+            throw new GitletException("No changes added to the commit.");
+        }
+        Commit parentCommit = checkOutCommit(readContentsAsString(head));
+        HashMap<String, String> newCommitFiles = parentCommit.getFiles();
+        newCommitFiles.putAll(stagingArea);
+        Commit newCommit = new Commit(
+            message,
+            AUTHOR,
+            parentCommit.id,
+            newCommitFiles
+        );
+        File commit = join(COMMITS, newCommit.id);
+        File branch = join(BRANCHES, currentBranch);
+        writeObject(commit, newCommit);
+        writeContents(branch, newCommit.id);
+        writeContents(head, newCommit.id);
+        stagingArea.clear();
+    }
+
     // Helper method to check-out a commit.
-    private static HashMap<String, String> checkOutCommit(String sha1) {
+    private static Commit checkOutCommit(String sha1) {
         if (sha1 == null) {
-            return null;
+            throw new IllegalArgumentException("sha1 id is null");
         }
         File commitFile = join(COMMITS, sha1);
-        if (commitFile == null) {
+        if (!commitFile.exists()) {
             throw new GitletException("Commit doesn't exist");
         }
-        Commit currentCommit = readObject(commitFile, Commit.class);
-        HashMap<String, String> currentCommitFileMap = currentCommit.getFiles();
-        if (currentCommit != null) {
-            return currentCommitFileMap;
-        } else {
-            return null;
-        }
+        return readObject(commitFile, Commit.class);
     }
 }
