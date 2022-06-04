@@ -42,6 +42,9 @@ public class Commit implements Serializable {
         id = Utils.sha1();
     }
 
+    public boolean isEmpty() {
+        return files == null;
+    }
     public HashMap<String, String> getFiles() {
         return files;
     }

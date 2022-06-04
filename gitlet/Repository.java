@@ -1,10 +1,12 @@
 package gitlet;
 
 import java.io.File;
+import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static gitlet.Utils.*;
 
@@ -31,12 +33,11 @@ public class Repository {
     public static final File FILES = join(COMMITS, "files");
     /** This file keeps track of which commit is currently active. */
     public static File head = join(GITLET_DIR, "HEAD");
+    public static File activeBranch = join(BRANCHES, "current");
+    public static File STAGING_AREA = join(GITLET_DIR, "INDEX");
     /**
      * Staging area is a map of fileNames, sha1 (key,value) pairs.
      */
-    public static HashMap<String, String> stagingArea = new HashMap<>();
-    public static String currentBranch;
-
     public static void init() {
         if (GITLET_DIR.exists()) {
             throw new GitletException(
@@ -54,15 +55,17 @@ public class Repository {
                 null);
 
         File newCommit = join(COMMITS, initCommit.id);
-        currentBranch = "master";
-        File branch = join(BRANCHES, currentBranch);
+        File branch = join(BRANCHES, "master");
         writeObject(newCommit, initCommit);
         writeContents(branch, initCommit.id);
         writeContents(head, initCommit.id);
+        writeContents(activeBranch, "master");
+        writeObject(STAGING_AREA, new StagingArea());
         System.out.println(initCommit.toString());
     }
 
     public static void add(String fileName) {
+        StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
         List<String> currentFiles = plainFilenamesIn(CWD);
         Commit currentCommit = checkOutCommit(readContentsAsString(head));
         HashMap<String, String> currentCommitFileMap =
@@ -77,7 +80,8 @@ public class Repository {
                     ? null
                     : currentCommitFileMap.get(fileName);
             if (!sha1.equals(commitedSHA)) {
-                stagingArea.put(fileName, sha1);
+                stagingArea.map.put(fileName, sha1);
+                writeObject(STAGING_AREA, stagingArea);
             }
         } else {
             throw new GitletException("File does not exist.");
@@ -85,15 +89,20 @@ public class Repository {
     }
 
     public static void commit(String message) {
-        if (message.length() == 0) {
-            throw new GitletException("Please enter a commit message.");
-        }
-        if (stagingArea.isEmpty()) {
+        StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
+        if (stagingArea.map.isEmpty()) {
             throw new GitletException("No changes added to the commit.");
         }
+        for (Map.Entry<String, String> set : stagingArea.map.entrySet()) {
+            File stagedFile = join(CWD, set.getKey());
+            File shaFile = join(GITLET_DIR, set.getValue());
+            writeContents(shaFile, readContentsAsString(stagedFile));
+        }
         Commit parentCommit = checkOutCommit(readContentsAsString(head));
-        HashMap<String, String> newCommitFiles = parentCommit.getFiles();
-        newCommitFiles.putAll(stagingArea);
+        HashMap<String, String> newCommitFiles = parentCommit.isEmpty()
+                ? new HashMap<>()
+                : parentCommit.getFiles();
+        newCommitFiles.putAll(stagingArea.map);
         Commit newCommit = new Commit(
             message,
             AUTHOR,
@@ -101,11 +110,12 @@ public class Repository {
             newCommitFiles
         );
         File commit = join(COMMITS, newCommit.id);
-        File branch = join(BRANCHES, currentBranch);
+        File branch = join(BRANCHES, readContentsAsString(activeBranch));
         writeObject(commit, newCommit);
         writeContents(branch, newCommit.id);
         writeContents(head, newCommit.id);
-        stagingArea.clear();
+        stagingArea.map.clear();
+        writeObject(STAGING_AREA, stagingArea);
     }
 
     // Helper method to check-out a commit.
@@ -118,5 +128,12 @@ public class Repository {
             throw new GitletException("Commit doesn't exist");
         }
         return readObject(commitFile, Commit.class);
+    }
+    // Helper class for staging.
+    public static class StagingArea implements Serializable {
+        public HashMap<String, String> map;
+        public StagingArea() {
+            map = new HashMap<>();
+        }
     }
 }
