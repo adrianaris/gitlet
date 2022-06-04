@@ -1,4 +1,5 @@
 package gitlet;
+
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -38,8 +39,10 @@ public class Commit implements Serializable {
         this.message = message;
         this.parents = parents;
         this.files = files;
-        this.date = DATE_FORMAT.format(new Date(0));
-        id = Utils.sha1();
+        this.date = parents == null
+                ? DATE_FORMAT.format(new Date(0))
+                : DATE_FORMAT.format(new Date());
+        id = files == null ? Utils.sha1() : Utils.sha1(files.toString());
     }
 
     public boolean isEmpty() {

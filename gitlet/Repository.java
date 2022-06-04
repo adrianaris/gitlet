@@ -95,7 +95,7 @@ public class Repository {
         }
         for (Map.Entry<String, String> set : stagingArea.map.entrySet()) {
             File stagedFile = join(CWD, set.getKey());
-            File shaFile = join(GITLET_DIR, set.getValue());
+            File shaFile = join(FILES, set.getValue());
             writeContents(shaFile, readContentsAsString(stagedFile));
         }
         Commit parentCommit = checkOutCommit(readContentsAsString(head));
@@ -111,11 +111,14 @@ public class Repository {
         );
         File commit = join(COMMITS, newCommit.id);
         File branch = join(BRANCHES, readContentsAsString(activeBranch));
+        System.out.println(newCommit.id);
+        System.out.println(parentCommit.id);
         writeObject(commit, newCommit);
         writeContents(branch, newCommit.id);
         writeContents(head, newCommit.id);
         stagingArea.map.clear();
         writeObject(STAGING_AREA, stagingArea);
+        System.out.println(readObject(join(COMMITS, newCommit.id), Commit.class).getFiles().toString());
     }
 
     // Helper method to check-out a commit.
