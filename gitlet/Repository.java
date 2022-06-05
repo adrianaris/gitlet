@@ -176,6 +176,33 @@ public class Repository {
         }
     }
 
+    public static void status() {
+        if (!GITLET_DIR.exists()) {
+            throw new GitletException("No gitlet version control exists" +
+                    " in the current directory.");
+        }
+        StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
+        Commit currentCommit = checkOutCommit(readContentsAsString(head));
+        HashMap<String, String> commitedFiles = currentCommit.getFiles();
+        List<String> branches = plainFilenamesIn(BRANCHES);
+        String currentBranch = readContentsAsString(join(BRANCHES, "current"));
+        List<String> currentFiles = plainFilenamesIn(CWD);
+
+        System.out.println("=== Branches ===");
+        for (String branch : branches) {
+            if (!branch.equals("current")) {
+                if (branch.equals(currentBranch)) {
+                    System.out.println("*" + branch);
+                } else {
+                    System.out.println(branch);
+                }
+            }
+        }
+        System.out.println();
+        System.out.println("=== Staged Files ===");
+
+    }
+
     // Helper method to check-out a commit.
     private static Commit checkOutCommit(String sha1) {
         if (sha1 == null) {
