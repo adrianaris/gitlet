@@ -24,22 +24,36 @@ public class Commit implements Serializable {
     private String author;
     private String date;
     private final DateFormat DATE_FORMAT = new SimpleDateFormat("MMM d, yyy HH:mm a");
-    private String parents;
+    private String parent;
+    /**
+     * Should the commit be a merge this is the parentID of the merged-in commit parent.
+     */
+    private String mergeParent;
     /** Map of fileNames and corresponding sha1 */
     private HashMap<String, String> files;
 
     public Commit(String message,
                   String author,
-                  String parents,
+                  String parent,
                   HashMap<String, String> files) {
         this.author = author;
         this.message = message;
-        this.parents = parents;
+        this.parent = parent;
         this.files = files;
-        this.date = parents == null
+        this.date = parent == null
                 ? DATE_FORMAT.format(new Date(0))
                 : DATE_FORMAT.format(new Date());
         id = files == null ? Utils.sha1() : Utils.sha1(files.toString());
+        mergeParent = null;
+    }
+
+    public void merge(Commit commit, String message) {
+        mergeParent = commit.getParent();
+        HashMap<String, String> toBeMergedMap = commit.getFiles();
+        files.putAll(toBeMergedMap);
+        date = DATE_FORMAT.format(new Date());
+        id = Utils.sha1(files.toString());
+        this.message = message;
     }
 
     public boolean isEmpty() {
@@ -52,12 +66,17 @@ public class Commit implements Serializable {
     public void print() {
         System.out.println("===");
         System.out.println("commit " + id);
+        if (mergeParent != null) {
+            System.out.println("Merge: " +
+                    parent.substring(0, 6) + " " +
+                    mergeParent.substring(0, 6));
+        }
         System.out.println("Data: " + date);
         System.out.println(message);
         System.out.println();
     }
 
     public String getParent() {
-        return parents;
+        return parent;
     }
 }
