@@ -153,6 +153,29 @@ public class Repository {
         log(parent);
     }
 
+    public static void globalLog() {
+        List<String> commits = plainFilenamesIn(COMMITS);
+        for (String commit : commits) {
+            Commit com = checkOutCommit(commit);
+            com.print();
+        }
+    }
+
+    public static void find(String message) {
+        List<String> commits = plainFilenamesIn(COMMITS);
+        int found = 0;
+        for (String commit : commits) {
+            Commit com = checkOutCommit(commit);
+            if (message.equals(com.getMessage())) {
+                System.out.println(commit);
+            }
+            found++;
+        }
+        if (found == 0) {
+            System.out.println("Found no commit with that message.");
+        }
+    }
+
     // Helper method to check-out a commit.
     private static Commit checkOutCommit(String sha1) {
         if (sha1 == null) {

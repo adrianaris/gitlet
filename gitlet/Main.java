@@ -36,6 +36,14 @@ public class Main {
                 validateNumArgs("log", args, 1);
                 Repository.log();
                 break;
+            case "global-log":
+                validateNumArgs("global-log", args, 1);
+                Repository.globalLog();
+                break;
+            case "find":
+                validateNumArgs("find", args, 2);
+                Repository.find(args[1]);
+                break;
             default:
                 throw  new GitletException("Unknown command: " + args[0]);
         }

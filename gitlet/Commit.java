@@ -79,4 +79,12 @@ public class Commit implements Serializable {
     public String getParent() {
         return parent;
     }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public String getId() {
+        return id;
+    }
 }
