@@ -138,10 +138,25 @@ public class Repository {
         writeObject(STAGING_AREA, stagingArea);
     }
 
+    public static void log() {
+        Commit currentCommit = checkOutCommit(readContentsAsString(head));
+        log(currentCommit);
+    }
+
+    private static void log(Commit commit) {
+        if (commit == null) {
+            System.exit(1);
+        }
+        commit.print();
+        String parentId = commit.getParent();
+        Commit parent = checkOutCommit(parentId);
+        log(parent);
+    }
+
     // Helper method to check-out a commit.
     private static Commit checkOutCommit(String sha1) {
         if (sha1 == null) {
-            throw new IllegalArgumentException("sha1 id is null");
+            return null;
         }
         File commitFile = join(COMMITS, sha1);
         if (!commitFile.exists()) {

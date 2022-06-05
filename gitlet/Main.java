@@ -32,6 +32,10 @@ public class Main {
                 validateNumArgs("rm", args, 2);
                 Repository.rm(args[1]);
                 break;
+            case "log":
+                validateNumArgs("log", args, 1);
+                Repository.log();
+                break;
             default:
                 throw  new GitletException("Unknown command: " + args[0]);
         }

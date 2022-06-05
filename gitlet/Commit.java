@@ -48,7 +48,16 @@ public class Commit implements Serializable {
     public HashMap<String, String> getFiles() {
         return files;
     }
-    //public String[] getParent() {
-    //    return parents;
-    //}
+
+    public void print() {
+        System.out.println("===");
+        System.out.println("commit " + id);
+        System.out.println("Data: " + date);
+        System.out.println(message);
+        System.out.println();
+    }
+
+    public String getParent() {
+        return parents;
+    }
 }
