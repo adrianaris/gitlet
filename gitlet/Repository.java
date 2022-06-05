@@ -218,8 +218,7 @@ public class Repository {
                     || !commitedFiles.containsKey(fileName)
                     && !stagingArea.map.containsKey(fileName)) {
                 untrackedFiles.append(fileName).append("\n");
-            } else if (commitedFiles != null
-                    && commitedFiles.containsKey(fileName)
+            } else if (commitedFiles.containsKey(fileName)
                     && !stagingArea.map.containsKey(fileName)
                     && !commitedFiles.get(fileName).equals(
                             sha1(readContentsAsString(
