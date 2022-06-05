@@ -188,6 +188,46 @@ public class Repository {
         String currentBranch = readContentsAsString(join(BRANCHES, "current"));
         List<String> currentFiles = plainFilenamesIn(CWD);
 
+        StringBuilder stagedFiles = new StringBuilder();
+        StringBuilder removedFiles = new StringBuilder();
+        StringBuilder modificationsNotStaged = new StringBuilder();
+        StringBuilder untrackedFiles = new StringBuilder();
+
+        for (Map.Entry<String, String> set: stagingArea.map.entrySet()) {
+            String fileName = set.getKey();
+            if (set.getValue() == null) {
+                removedFiles.append(fileName).append("\n");
+            } else {
+                stagedFiles.append(fileName).append("\n");
+            }
+            if (currentFiles != null && !currentFiles.contains(fileName)) {
+                modificationsNotStaged.append(fileName)
+                        .append(" (deleted)").append("\n");
+            } else if (currentFiles != null
+                    && currentFiles.contains(fileName)
+                    && !sha1(set.getValue()).equals(
+                            sha1(readContentsAsString(
+                                            join(CWD, fileName))))) {
+                modificationsNotStaged.append(fileName)
+                        .append(" (modified)").append("\n");
+            }
+        }
+        assert currentFiles != null;
+        for (String fileName : currentFiles) {
+            if (commitedFiles == null
+                    || !commitedFiles.containsKey(fileName)
+                    && !stagingArea.map.containsKey(fileName)) {
+                untrackedFiles.append(fileName).append("\n");
+            } else if (commitedFiles != null
+                    && commitedFiles.containsKey(fileName)
+                    && !stagingArea.map.containsKey(fileName)
+                    && !commitedFiles.get(fileName).equals(
+                            sha1(readContentsAsString(
+                                            join(CWD, fileName))))) {
+                modificationsNotStaged.append(fileName)
+                        .append(" (modified)").append("\n");
+            }
+        }
         System.out.println("=== Branches ===");
         for (String branch : branches) {
             if (!branch.equals("current")) {
@@ -200,7 +240,13 @@ public class Repository {
         }
         System.out.println();
         System.out.println("=== Staged Files ===");
-
+        System.out.println(stagedFiles);
+        System.out.println("=== Removed Files ");
+        System.out.println(removedFiles);
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        System.out.println(modificationsNotStaged);
+        System.out.println("=== Untracked Files ===");
+        System.out.println(untrackedFiles);
     }
 
     // Helper method to check-out a commit.

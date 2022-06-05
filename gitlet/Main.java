@@ -44,6 +44,10 @@ public class Main {
                 validateNumArgs("find", args, 2);
                 Repository.find(args[1]);
                 break;
+            case "status":
+                validateNumArgs("status", args, 1);
+                Repository.status();
+                break;
             default:
                 throw  new GitletException("Unknown command: " + args[0]);
         }
