@@ -9,7 +9,6 @@ public class Main {
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
     public static void main(String[] args) {
-        // TODO: what if args is empty?
         String firstArg = args[0];
         if (firstArg == null) {
             throw new GitletException("No command provided.");
@@ -29,7 +28,10 @@ public class Main {
                 }
                 Repository.commit(args[1]);
                 break;
-            // TODO: FILL THE REST IN
+            case "rm":
+                validateNumArgs("rm", args, 2);
+                Repository.rm(args[1]);
+                break;
             default:
                 throw  new GitletException("Unknown command: " + args[0]);
         }

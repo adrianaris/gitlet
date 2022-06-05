@@ -35,14 +35,13 @@ public class Repository {
     public static File head = join(GITLET_DIR, "HEAD");
     public static File activeBranch = join(BRANCHES, "current");
     public static File STAGING_AREA = join(GITLET_DIR, "INDEX");
-    /**
-     * Staging area is a map of fileNames, sha1 (key,value) pairs.
-     */
+
     public static void init() {
         if (GITLET_DIR.exists()) {
-            throw new GitletException(
+            System.out.println(
                     "A Gitlet version-control system already" +
-                            "exists in the current directory");
+                            "exists in the current directory.");
+            System.exit(0);
         }
         GITLET_DIR.mkdir();
         COMMITS.mkdir();
@@ -61,7 +60,6 @@ public class Repository {
         writeContents(head, initCommit.id);
         writeContents(activeBranch, "master");
         writeObject(STAGING_AREA, new StagingArea());
-        System.out.println(initCommit.toString());
     }
 
     public static void add(String fileName) {
@@ -75,12 +73,13 @@ public class Repository {
         }
         if (currentFiles.contains(fileName)) {
             File file = join(CWD, fileName);
-            String sha1 = sha1(readContentsAsString(file));
+            String contents = readContentsAsString(file);
+            String sha1 = sha1(contents);
             String commitedSHA = currentCommitFileMap == null
                     ? null
                     : currentCommitFileMap.get(fileName);
             if (!sha1.equals(commitedSHA)) {
-                stagingArea.map.put(fileName, sha1);
+                stagingArea.map.put(fileName, contents);
                 writeObject(STAGING_AREA, stagingArea);
             }
         } else {
@@ -93,16 +92,23 @@ public class Repository {
         if (stagingArea.map.isEmpty()) {
             throw new GitletException("No changes added to the commit.");
         }
-        for (Map.Entry<String, String> set : stagingArea.map.entrySet()) {
-            File stagedFile = join(CWD, set.getKey());
-            File shaFile = join(FILES, set.getValue());
-            writeContents(shaFile, readContentsAsString(stagedFile));
-        }
         Commit parentCommit = checkOutCommit(readContentsAsString(head));
         HashMap<String, String> newCommitFiles = parentCommit.isEmpty()
                 ? new HashMap<>()
                 : parentCommit.getFiles();
-        newCommitFiles.putAll(stagingArea.map);
+        for (Map.Entry<String, String> set : stagingArea.map.entrySet()) {
+            String contents = set.getValue();
+            String fileName = set.getKey();
+            if (contents == null) {
+                newCommitFiles.remove(fileName);
+                restrictedDelete(join(CWD, fileName));
+            } else {
+                String sha = sha1(contents);
+                File shaFile = join(FILES, sha);
+                writeContents(shaFile, contents);
+                newCommitFiles.put(fileName, sha);
+            }
+        }
         Commit newCommit = new Commit(
             message,
             AUTHOR,
@@ -118,7 +124,18 @@ public class Repository {
         writeContents(head, newCommit.id);
         stagingArea.map.clear();
         writeObject(STAGING_AREA, stagingArea);
-        System.out.println(readObject(join(COMMITS, newCommit.id), Commit.class).getFiles().toString());
+    }
+
+    public static void rm(String fileName) {
+        StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
+        Commit currentCommit = checkOutCommit(readContentsAsString(head));
+        HashMap<String, String> commitedFiles = currentCommit.getFiles();
+        if (!stagingArea.map.containsKey(fileName)
+                && !commitedFiles.containsKey(fileName)) {
+            throw new GitletException("No reason to remove the file.");
+        }
+        stagingArea.map.put(fileName, null);
+        writeObject(STAGING_AREA, stagingArea);
     }
 
     // Helper method to check-out a commit.
