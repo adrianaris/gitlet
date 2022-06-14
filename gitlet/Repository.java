@@ -248,6 +248,42 @@ public class Repository {
         System.out.println(untrackedFiles);
     }
 
+    public static void checkOutFileInCommit(String sha1, String fileName) {
+        String commitID = sha1;
+        if (sha1.length() < 40) {
+            commitID = checkSha(sha1);
+        }
+        HashMap<String, String> commitFiles =
+                checkOutCommit(commitID).getFiles();
+        if (commitFiles.containsKey(fileName)) {
+            File file = join(CWD, fileName);
+            writeContents(file, commitFiles.get(fileName));
+        } else {
+            throw new GitletException("File does not exist in that commit.");
+        }
+    }
+
+    public static void checkOutBranch(String branchName) {
+        List<String> branches = plainFilenamesIn(BRANCHES);
+        assert branches != null;
+        if (branches.contains(branchName)) {
+            HashMap<String, String> currentFiles =
+                    checkOutCommit(readContentsAsString(head)).getFiles();
+            String branchID = readContentsAsString(join(BRANCHES, branchName));
+            HashMap<String, String> branchFiles =
+                    checkOutCommit(branchID).getFiles();
+            writeContents(head, branchID);
+            for (Map.Entry<String, String> set : branchFiles.entrySet()) {
+                File file = join(CWD, set.getKey());
+                writeContents(file, set.getValue());
+                currentFiles.remove(set.getKey());
+            }
+            for (Map.Entry<String, String> set: currentFiles.entrySet()) {
+                join(CWD, set.getKey()).delete();
+            }
+        }
+    }
+
     // Helper method to check-out a commit.
     private static Commit checkOutCommit(String sha1) {
         if (sha1 == null) {
@@ -259,7 +295,21 @@ public class Repository {
         }
         return readObject(commitFile, Commit.class);
     }
+
+    // Helper method for incomplete commit IDs.
+    private static String checkSha(String sha1) {
+        String commitID = sha1;
+        List<String> commits = plainFilenamesIn(COMMITS);
+        for (String sha : commits) {
+            if (commitID == sha.substring(0, commitID.length())) {
+                return sha;
+            }
+        }
+        throw new GitletException("No commit with that id exists");
+    }
+
     // Helper class for staging.
+    // Perhaps I should experiment with singleton Class!!!
     public static class StagingArea implements Serializable {
         public HashMap<String, String> map;
         public StagingArea() {
