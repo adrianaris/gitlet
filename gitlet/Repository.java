@@ -247,6 +247,10 @@ public class Repository {
         System.out.println("=== Untracked Files ===");
         System.out.println(untrackedFiles);
     }
+    public static void checkOutFileInHead(String fileName) {
+        String headCommit = readContentsAsString(head);
+        checkOutFileInCommit(headCommit, fileName);
+    }
 
     public static void checkOutFileInCommit(String sha1, String fileName) {
         String commitID = sha1;
@@ -261,6 +265,18 @@ public class Repository {
         } else {
             throw new GitletException("File does not exist in that commit.");
         }
+    }
+
+    // Helper method for incomplete commit IDs.
+    private static String checkSha(String sha1) {
+        String commitID = sha1;
+        List<String> commits = plainFilenamesIn(COMMITS);
+        for (String sha : commits) {
+            if (commitID == sha.substring(0, commitID.length())) {
+                return sha;
+            }
+        }
+        throw new GitletException("No commit with that id exists");
     }
 
     public static void checkOutBranch(String branchName) {
@@ -294,18 +310,6 @@ public class Repository {
             throw new GitletException("Commit doesn't exist");
         }
         return readObject(commitFile, Commit.class);
-    }
-
-    // Helper method for incomplete commit IDs.
-    private static String checkSha(String sha1) {
-        String commitID = sha1;
-        List<String> commits = plainFilenamesIn(COMMITS);
-        for (String sha : commits) {
-            if (commitID == sha.substring(0, commitID.length())) {
-                return sha;
-            }
-        }
-        throw new GitletException("No commit with that id exists");
     }
 
     // Helper class for staging.

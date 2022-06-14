@@ -48,6 +48,24 @@ public class Main {
                 validateNumArgs("status", args, 1);
                 Repository.status();
                 break;
+            case "checkout":
+                if (args.length == 2) {
+                    Repository.checkOutBranch(args[1]);
+                } else if(args.length == 3) {
+                    if (!args[1].equals("--")) {
+                        throw new GitletException("Unsupported modifier.");
+                    }
+                    Repository.checkOutFileInHead(args[2]);
+                } else if(args.length == 4) {
+                    if (!args[2].equals("--")) {
+                        throw new GitletException("Unsupported modifier.")
+                    }
+                    Repository.checkOutFileInCommit(args[1], args[3]);
+                } else {
+                    throw new GitletException("Invalid number of arguments" +
+                            " for: checkout");
+                }
+                break;
             default:
                 throw  new GitletException("Unknown command: " + args[0]);
         }
