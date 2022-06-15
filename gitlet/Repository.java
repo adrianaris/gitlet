@@ -2,8 +2,6 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
-import java.nio.file.Paths;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -144,17 +142,17 @@ public class Repository {
     }
 
     private static void log(Commit commit) {
-        if (commit == null) {
-            System.exit(1);
-        }
         commit.print();
         String parentId = commit.getParent();
-        Commit parent = checkOutCommit(parentId);
-        log(parent);
+        if (parentId != null) {
+            Commit parent = checkOutCommit(parentId);
+            log(parent);
+        }
     }
 
     public static void globalLog() {
         List<String> commits = plainFilenamesIn(COMMITS);
+        assert commits != null;
         for (String commit : commits) {
             Commit com = checkOutCommit(commit);
             com.print();
@@ -164,6 +162,7 @@ public class Repository {
     public static void find(String message) {
         List<String> commits = plainFilenamesIn(COMMITS);
         int found = 0;
+        assert commits != null;
         for (String commit : commits) {
             Commit com = checkOutCommit(commit);
             if (message.equals(com.getMessage())) {
@@ -228,6 +227,7 @@ public class Repository {
             }
         }
         System.out.println("=== Branches ===");
+        assert branches != null;
         for (String branch : branches) {
             if (!branch.equals("current")) {
                 if (branch.equals(currentBranch)) {
@@ -247,6 +247,7 @@ public class Repository {
         System.out.println("=== Untracked Files ===");
         System.out.println(untrackedFiles);
     }
+
     public static void checkOutFileInHead(String fileName) {
         String headCommit = readContentsAsString(head);
         checkOutFileInCommit(headCommit, fileName);
@@ -269,10 +270,10 @@ public class Repository {
 
     // Helper method for incomplete commit IDs.
     private static String checkSha(String sha1) {
-        String commitID = sha1;
         List<String> commits = plainFilenamesIn(COMMITS);
+        assert commits != null;
         for (String sha : commits) {
-            if (commitID == sha.substring(0, commitID.length())) {
+            if (sha1.equals(sha.substring(0, sha1.length()))) {
                 return sha;
             }
         }
@@ -295,12 +296,23 @@ public class Repository {
                 currentFiles.remove(set.getKey());
             }
             for (Map.Entry<String, String> set: currentFiles.entrySet()) {
-                join(CWD, set.getKey()).delete();
+                restrictedDelete(join(CWD, set.getKey()));
             }
         }
     }
 
-    // Helper method to check-out a commit.
+    public static void branch(String branchName) {
+        List<String> currentBranches = plainFilenamesIn(BRANCHES);
+        assert currentBranches != null;
+        if (currentBranches.contains(branchName)) {
+            throw new GitletException("A branch with that name already exists.");
+        }
+        File branch = join(BRANCHES, branchName);
+        writeContents(branch, readContentsAsString(head));
+        writeContents(activeBranch, branchName);
+    }
+
+    // Helper method to check out a commit.
     private static Commit checkOutCommit(String sha1) {
         if (sha1 == null) {
             return null;
