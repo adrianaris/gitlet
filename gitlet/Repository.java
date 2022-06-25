@@ -33,7 +33,6 @@ public class Repository {
     public static File head = join(GITLET_DIR, "HEAD");
     public static File activeBranch = join(BRANCHES, "current");
     public static File STAGING_AREA = join(GITLET_DIR, "INDEX");
-    public static List<String> currentFiles = plainFilenamesIn(CWD);
 
     public static void init() {
         if (GITLET_DIR.exists()) {
@@ -52,7 +51,9 @@ public class Repository {
                 null,
                 null);
 
-        File newCommit = join(COMMITS, initCommit.id);
+        File newCommitDir = join(COMMITS, initCommit.id.substring(0, 4));
+        newCommitDir.mkdir();
+        File newCommit = join(newCommitDir, initCommit.id.substring(4));
         File branch = join(BRANCHES, "master");
         writeObject(newCommit, initCommit);
         writeContents(branch, initCommit.id);
@@ -122,10 +123,8 @@ public class Repository {
             parentCommit.id,
             newCommitFiles
         );
-        File commit = join(COMMITS, newCommit.id);
+        File commit = createCommitFile(newCommit.id);
         File branch = join(BRANCHES, readContentsAsString(activeBranch));
-        System.out.println(newCommit.id);
-        System.out.println(parentCommit.id);
         writeObject(commit, newCommit);
         writeContents(branch, newCommit.id);
         writeContents(head, newCommit.id);
@@ -301,18 +300,6 @@ public class Repository {
         }
     }
 
-    // Helper method for incomplete commit IDs.
-    private static String checkSha(String sha1) {
-        List<String> commits = plainFilenamesIn(COMMITS);
-        assert commits != null;
-        for (String sha : commits) {
-            if (sha1.equals(sha.substring(0, sha1.length()))) {
-                return sha;
-            }
-        }
-        throw new GitletException("No commit with that id exists");
-    }
-
     public static void checkOutBranch(String branchName) {
         if (!GITLET_DIR.exists()) {
             throw new GitletException("No gitlet version control exists" +
@@ -353,16 +340,67 @@ public class Repository {
         writeContents(activeBranch, branchName);
     }
 
+    public static void rm_branch(String branchName) {
+        if (!GITLET_DIR.exists()) {
+            throw new GitletException("No gitlet version control exists" +
+                    " in the current directory.");
+        }
+        String currentBranch = readContentsAsString(join(BRANCHES, "current"));
+        if (currentBranch.equals(branchName)) {
+            throw new GitletException("Cannot remove the current branch.");
+        }
+        File branch = join(BRANCHES, branchName);
+        if (branch.exists()) {
+            restrictedDelete(branch);
+        } else {
+            throw new GitletException("A branch with that" +
+                    " name does not exist.");
+        }
+    }
+
+    public static void reset(String commitId) {
+        if (!GITLET_DIR.exists()) {
+            throw new GitletException("No gitlet version control exists" +
+                    " in the current directory.");
+        }
+        Commit commit = checkOutCommit(commitId);
+        Commit currentCommit = checkOutCommit(readContentsAsString(head));
+    }
+
     // Helper method to check out a commit.
     private static Commit checkOutCommit(String sha1) {
         if (sha1 == null) {
             return null;
         }
-        File commitFile = join(COMMITS, sha1);
+        File commitDir = join(COMMITS, sha1.substring(0, 3));
+        File commitFile;
+        if (sha1.length() < 40) {
+            if (!commitDir.exists()) {
+                throw new GitletException("No commit with that id exists.");
+            }
+            List<String> commits = plainFilenamesIn(commitDir);
+            assert commits != null;
+            for (String sha : commits) {
+                if (sha.substring(0, sha1.length()).equals(sha1)) {
+                    commitFile = join(commitDir, sha);
+                }
+            }
+        } else {
+            commitFile = join(commitDir, sha1.substring(4));
+        }
         if (!commitFile.exists()) {
-            throw new GitletException("Commit doesn't exist");
+            throw new GitletException("No commit with that id exists.");
         }
         return readObject(commitFile, Commit.class);
+    }
+
+    //Helper method to create commit file.
+    private static File createCommitFile(String sha1) {
+        File commitDir = join(COMMITS, sha1.substring(0, 3));
+        if (!commitDir.exists()) {
+            commitDir.mkdir();
+        }
+        return join(commitDir, sha1.substring(4));
     }
 
     // Helper class for staging.
@@ -373,4 +411,17 @@ public class Repository {
             map = new HashMap<>();
         }
     }
+
+    // Helper method for incomplete commit IDs.
+    private static String checkSha(String sha1) {
+        List<String> commits = plainFilenamesIn(COMMITS);
+        assert commits != null;
+        for (String sha : commits) {
+            if (sha1.equals(sha.substring(0, sha1.length()))) {
+                return sha;
+            }
+        }
+        throw new GitletException("No commit with that id exists");
+    }
+
 }

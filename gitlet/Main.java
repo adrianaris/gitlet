@@ -70,6 +70,10 @@ public class Main {
                 validateNumArgs("branch", args, 2);
                 Repository.branch(args[1]);
                 break;
+            case "rm-branch":
+                validateNumArgs("rm-branch", args, 2);
+                Repository.rm_branch(args[1]);
+                break;
             default:
                 throw  new GitletException("Unknown command: " + args[0]);
         }
