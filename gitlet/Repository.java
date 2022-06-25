@@ -286,12 +286,8 @@ public class Repository {
             throw new GitletException("No gitlet version control exists" +
                     " in the current directory.");
         }
-        String commitID = sha1;
-        if (sha1.length() < 40) {
-            commitID = checkSha(sha1);
-        }
         HashMap<String, String> commitFiles =
-                checkOutCommit(commitID).getFiles();
+                checkOutCommit(sha1).getFiles();
         if (commitFiles.containsKey(fileName)) {
             File file = join(CWD, fileName);
             writeContents(file, commitFiles.get(fileName));
@@ -372,8 +368,8 @@ public class Repository {
         if (sha1 == null) {
             return null;
         }
-        File commitDir = join(COMMITS, sha1.substring(0, 3));
-        File commitFile;
+        File commitDir = join(COMMITS, sha1.substring(0, 4));
+        File commitFile = join(commitDir, sha1.substring(4));
         if (sha1.length() < 40) {
             if (!commitDir.exists()) {
                 throw new GitletException("No commit with that id exists.");
@@ -381,12 +377,10 @@ public class Repository {
             List<String> commits = plainFilenamesIn(commitDir);
             assert commits != null;
             for (String sha : commits) {
-                if (sha.substring(0, sha1.length()).equals(sha1)) {
+                if (sha.startsWith(sha1.substring(4))) {
                     commitFile = join(commitDir, sha);
                 }
             }
-        } else {
-            commitFile = join(commitDir, sha1.substring(4));
         }
         if (!commitFile.exists()) {
             throw new GitletException("No commit with that id exists.");
@@ -396,7 +390,7 @@ public class Repository {
 
     //Helper method to create commit file.
     private static File createCommitFile(String sha1) {
-        File commitDir = join(COMMITS, sha1.substring(0, 3));
+        File commitDir = join(COMMITS, sha1.substring(0, 4));
         if (!commitDir.exists()) {
             commitDir.mkdir();
         }
@@ -411,17 +405,4 @@ public class Repository {
             map = new HashMap<>();
         }
     }
-
-    // Helper method for incomplete commit IDs.
-    private static String checkSha(String sha1) {
-        List<String> commits = plainFilenamesIn(COMMITS);
-        assert commits != null;
-        for (String sha : commits) {
-            if (sha1.equals(sha.substring(0, sha1.length()))) {
-                return sha;
-            }
-        }
-        throw new GitletException("No commit with that id exists");
-    }
-
 }
