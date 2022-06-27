@@ -3,6 +3,7 @@ package gitlet;
 import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -329,9 +330,60 @@ public class Repository {
         switchActiveCommit(commitId);
     }
 
-    public static void merge(String branchName) {
-        File branch = join(BRANCHES, branchName);
-    }
+//    public static void merge(String branchName) {
+//        if (branchName.equals(readContentsAsString(activeBranch))) {
+//            throw new GitletException("Cannot merge a branch with itself");
+//        }
+//        File branch = join(BRANCHES, branchName);
+//        if (!branch.exists()) {
+//            throw new GitletException("A branch with that" +
+//                    " name does not exist.");
+//        }
+//        StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
+//        if (!stagingArea.map.isEmpty()) {
+//            throw new GitletException("You have uncommitted changes.");
+//        }
+//
+//        String branchID = readContentsAsString(branch);
+//        String splitPointID = splitPointID(branchID);
+//
+//        if (branchID.equals(splitPointID)) {
+//            System.out.println("Given branch is an ancestor" +
+//                    " of the current branch.");
+//            System.exit(1);
+//        }
+//        if (splitPointID.equals(readContentsAsString(head))) {
+//            checkOutBranch(branchName);
+//        }
+//    }
+//
+//    // Helper method to find and return split point.
+//    private static String splitPointID(String commitID) {
+//        HashSet<String> ancestors = new HashSet<>();
+//        String headID = readContentsAsString(head);
+//        return BFS(ancestors, commitID, headID);
+//    }
+//
+//    // Helper method to traverse the commits tree and return split point.
+//    private static String BFS(HashSet<String> set,
+//                              String branch1,
+//                              String branch2) {
+//        if (set.contains(branch1) && branch1 != null) {
+//            return branch1;
+//        }
+//        if (set.contains(branch2) && branch2 != null) {
+//            return branch2;
+//        }
+//        set.add(branch1);
+//        set.add(branch2);
+//
+//        Commit c1 = checkOutCommit(branch1);
+//        Commit c2 = checkOutCommit(branch2);
+//
+//        String parent1 = c1 != null ? c1.getParent() : null;
+//        String parent2 = c2 != null ? c2.getParent() : null;
+//        return BFS(set, parent1, parent2);
+//    }
 
     // Helper method to check out a commit.
     private static Commit checkOutCommit(String sha1) {
