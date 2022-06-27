@@ -24,7 +24,8 @@ public class Commit implements Serializable {
     /** Author of the Commit. */
     private String author;
     private String date;
-    private final DateFormat DATE_FORMAT = new SimpleDateFormat("MMM d, yyy HH:mm a");
+    private final DateFormat DATE_FORMAT = new SimpleDateFormat(
+            "EEE MMM d HH:mm:ss yyy Z");
     private String parent;
     /**
      * Should the commit be a merge this is the parentID of the merged-in commit parent.
@@ -72,7 +73,7 @@ public class Commit implements Serializable {
                     parent.substring(0, 6) + " " +
                     mergeParent.substring(0, 6));
         }
-        System.out.println("Data: " + date);
+        System.out.println("Date: " + date);
         System.out.println(message);
         System.out.println();
     }
