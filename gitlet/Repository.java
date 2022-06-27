@@ -255,7 +255,8 @@ public class Repository {
                 checkOutCommit(sha1).getFiles();
         if (commitFiles.containsKey(fileName)) {
             File file = join(CWD, fileName);
-            writeContents(file, commitFiles.get(fileName));
+            File commitedFile = join(FILES, commitFiles.get(fileName));
+            writeContents(file, readContentsAsString(commitedFile));
         } else {
             throw new GitletException("File does not exist in that commit.");
         }
