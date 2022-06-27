@@ -301,23 +301,42 @@ public class Repository {
             throw new GitletException("No gitlet version control exists" +
                     " in the current directory.");
         }
-        List<String> branches = plainFilenamesIn(BRANCHES);
-        assert branches != null;
-        if (branches.contains(branchName)) {
-            HashMap<String, String> currentFiles =
-                    checkOutCommit(readContentsAsString(head)).getFiles();
-            String branchID = readContentsAsString(join(BRANCHES, branchName));
-            HashMap<String, String> branchFiles =
-                    checkOutCommit(branchID).getFiles();
-            writeContents(head, branchID);
-            for (Map.Entry<String, String> set : branchFiles.entrySet()) {
-                File file = join(CWD, set.getKey());
-                writeContents(file, set.getValue());
-                currentFiles.remove(set.getKey());
+        if (readContentsAsString(activeBranch).equals(branchName)) {
+            throw new GitletException("No need to checkout the current branch");
+        }
+        File branch = join(BRANCHES, branchName);
+        if (branch.exists()) {
+            String branchID = readContentsAsString(branch);
+            switchActiveCommit(branchID);
+            writeContents(join(BRANCHES, "current"), branchName);
+        } else {
+            throw new GitletException("No such branch exists.");
+        }
+    }
+
+    // Helper method that replaces active CWD files with the version
+    // of files in the provided commit.
+    private static void switchActiveCommit(String commitID) {
+        HashMap<String, String> activeCommitFiles =
+                checkOutCommit(readContentsAsString(head)).getFiles();
+        HashMap<String, String> replaceFiles =
+                checkOutCommit(commitID).getFiles();
+        List<String> currentFiles = plainFilenamesIn(CWD);
+        for (String file : currentFiles) {
+            if (!activeCommitFiles.containsKey(file) &&
+                    replaceFiles.containsKey(file)) {
+                throw new GitletException("There is an untracked file in the" +
+                        " way; delete it, or add and commit it first.");
             }
-            for (Map.Entry<String, String> set: currentFiles.entrySet()) {
-                restrictedDelete(join(CWD, set.getKey()));
-            }
+        }
+        writeContents(head, commitID);
+        for (Map.Entry<String, String> set : replaceFiles.entrySet()) {
+            File file = join(CWD, set.getKey());
+            writeContents(file, set.getValue());
+            activeCommitFiles.remove(set.getKey());
+        }
+        for (Map.Entry<String, String> set: activeCommitFiles.entrySet()) {
+            restrictedDelete(join(CWD, set.getKey()));
         }
     }
 
@@ -359,8 +378,7 @@ public class Repository {
             throw new GitletException("No gitlet version control exists" +
                     " in the current directory.");
         }
-        Commit commit = checkOutCommit(commitId);
-        Commit currentCommit = checkOutCommit(readContentsAsString(head));
+        switchActiveCommit(commitId);
     }
 
     // Helper method to check out a commit.
