@@ -63,10 +63,6 @@ public class Repository {
     }
 
     public static void add(String fileName) {
-        if (!GITLET_DIR.exists()) {
-            throw new GitletException("No gitlet version control exists" +
-                    " in the current directory.");
-        }
         StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
         List<String> currentFiles = plainFilenamesIn(CWD);
         Commit currentCommit = checkOutCommit(readContentsAsString(head));
@@ -92,10 +88,6 @@ public class Repository {
     }
 
     public static void commit(String message) {
-        if (!GITLET_DIR.exists()) {
-            throw new GitletException("No gitlet version control exists" +
-                    " in the current directory.");
-        }
         StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
         if (stagingArea.map.isEmpty()) {
             throw new GitletException("No changes added to the commit.");
@@ -133,10 +125,6 @@ public class Repository {
     }
 
     public static void rm(String fileName) {
-        if (!GITLET_DIR.exists()) {
-            throw new GitletException("No gitlet version control exists" +
-                    " in the current directory.");
-        }
         StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
         Commit currentCommit = checkOutCommit(readContentsAsString(head));
         HashMap<String, String> commitedFiles = currentCommit.getFiles();
@@ -149,10 +137,6 @@ public class Repository {
     }
 
     public static void log() {
-        if (!GITLET_DIR.exists()) {
-            throw new GitletException("No gitlet version control exists" +
-                    " in the current directory.");
-        }
         Commit currentCommit = checkOutCommit(readContentsAsString(head));
         log(currentCommit);
     }
@@ -167,10 +151,6 @@ public class Repository {
     }
 
     public static void globalLog() {
-        if (!GITLET_DIR.exists()) {
-            throw new GitletException("No gitlet version control exists" +
-                    " in the current directory.");
-        }
         List<String> commits = plainFilenamesIn(COMMITS);
         assert commits != null;
         for (String commit : commits) {
@@ -180,10 +160,6 @@ public class Repository {
     }
 
     public static void find(String message) {
-        if (!GITLET_DIR.exists()) {
-            throw new GitletException("No gitlet version control exists" +
-                    " in the current directory.");
-        }
         List<String> commits = plainFilenamesIn(COMMITS);
         int found = 0;
         assert commits != null;
@@ -200,10 +176,6 @@ public class Repository {
     }
 
     public static void status() {
-        if (!GITLET_DIR.exists()) {
-            throw new GitletException("No gitlet version control exists" +
-                    " in the current directory.");
-        }
         StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
         Commit currentCommit = checkOutCommit(readContentsAsString(head));
         HashMap<String, String> commitedFiles = currentCommit.getFiles();
@@ -273,19 +245,11 @@ public class Repository {
     }
 
     public static void checkOutFileInHead(String fileName) {
-        if (!GITLET_DIR.exists()) {
-            throw new GitletException("No gitlet version control exists" +
-                    " in the current directory.");
-        }
         String headCommit = readContentsAsString(head);
         checkOutFileInCommit(headCommit, fileName);
     }
 
     public static void checkOutFileInCommit(String sha1, String fileName) {
-        if (!GITLET_DIR.exists()) {
-            throw new GitletException("No gitlet version control exists" +
-                    " in the current directory.");
-        }
         HashMap<String, String> commitFiles =
                 checkOutCommit(sha1).getFiles();
         if (commitFiles.containsKey(fileName)) {
@@ -297,10 +261,6 @@ public class Repository {
     }
 
     public static void checkOutBranch(String branchName) {
-        if (!GITLET_DIR.exists()) {
-            throw new GitletException("No gitlet version control exists" +
-                    " in the current directory.");
-        }
         if (readContentsAsString(activeBranch).equals(branchName)) {
             throw new GitletException("No need to checkout the current branch");
         }
@@ -341,10 +301,6 @@ public class Repository {
     }
 
     public static void branch(String branchName) {
-        if (!GITLET_DIR.exists()) {
-            throw new GitletException("No gitlet version control exists" +
-                    " in the current directory.");
-        }
         List<String> currentBranches = plainFilenamesIn(BRANCHES);
         assert currentBranches != null;
         if (currentBranches.contains(branchName)) {
@@ -356,10 +312,6 @@ public class Repository {
     }
 
     public static void rm_branch(String branchName) {
-        if (!GITLET_DIR.exists()) {
-            throw new GitletException("No gitlet version control exists" +
-                    " in the current directory.");
-        }
         String currentBranch = readContentsAsString(join(BRANCHES, "current"));
         if (currentBranch.equals(branchName)) {
             throw new GitletException("Cannot remove the current branch.");
@@ -374,11 +326,11 @@ public class Repository {
     }
 
     public static void reset(String commitId) {
-        if (!GITLET_DIR.exists()) {
-            throw new GitletException("No gitlet version control exists" +
-                    " in the current directory.");
-        }
         switchActiveCommit(commitId);
+    }
+
+    public static void merge(String branchName) {
+        File branch = join(BRANCHES, branchName);
     }
 
     // Helper method to check out a commit.

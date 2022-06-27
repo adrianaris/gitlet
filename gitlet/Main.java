@@ -20,35 +20,43 @@ public class Main {
                 break;
             case "add":
                 validateNumArgs("add", args, 2);
+                checkIfGitletDirExists();
                 Repository.add(args[1]);
                 break;
             case "commit":
                 if (args.length != 2) {
                     throw new GitletException("no message");
                 }
+                checkIfGitletDirExists();
                 Repository.commit(args[1]);
                 break;
             case "rm":
                 validateNumArgs("rm", args, 2);
+                checkIfGitletDirExists();
                 Repository.rm(args[1]);
                 break;
             case "log":
                 validateNumArgs("log", args, 1);
+                checkIfGitletDirExists();
                 Repository.log();
                 break;
             case "global-log":
                 validateNumArgs("global-log", args, 1);
+                checkIfGitletDirExists();
                 Repository.globalLog();
                 break;
             case "find":
                 validateNumArgs("find", args, 2);
+                checkIfGitletDirExists();
                 Repository.find(args[1]);
                 break;
             case "status":
                 validateNumArgs("status", args, 1);
+                checkIfGitletDirExists();
                 Repository.status();
                 break;
             case "checkout":
+                checkIfGitletDirExists();
                 if (args.length == 2) {
                     Repository.checkOutBranch(args[1]);
                 } else if(args.length == 3) {
@@ -68,18 +76,28 @@ public class Main {
                 break;
             case "branch":
                 validateNumArgs("branch", args, 2);
+                checkIfGitletDirExists();
                 Repository.branch(args[1]);
                 break;
             case "rm-branch":
                 validateNumArgs("rm-branch", args, 2);
+                checkIfGitletDirExists();
                 Repository.rm_branch(args[1]);
                 break;
             case "reset":
                 validateNumArgs("reset", args, 2);
+                checkIfGitletDirExists();
                 Repository.reset(args[1]);
                 break;
             default:
                 throw  new GitletException("Unknown command: " + args[0]);
+        }
+    }
+
+    public static void checkIfGitletDirExists() {
+        if (!Repository.GITLET_DIR.exists()) {
+            throw new GitletException("No gitlet version control exists" +
+                    " in the current directory.");
         }
     }
 
