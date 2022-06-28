@@ -50,6 +50,7 @@ public class Repository {
                 "initial commit",
                 AUTHOR,
                 null,
+                null,
                 null);
 
         File newCommitDir = join(COMMITS, initCommit.id.substring(0, 4));
@@ -89,6 +90,10 @@ public class Repository {
     }
 
     public static void commit(String message) {
+        commit(message, null);
+    }
+
+    private static void commit(String message, String mergedInCommitID) {
         StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
         if (stagingArea.map.isEmpty()) {
             throw new GitletException("No changes added to the commit.");
@@ -111,10 +116,11 @@ public class Repository {
             }
         }
         Commit newCommit = new Commit(
-            message,
-            AUTHOR,
-            parentCommit.id,
-            newCommitFiles
+                message,
+                AUTHOR,
+                parentCommit.id,
+                mergedInCommitID,
+                newCommitFiles
         );
         File commit = createCommitFile(newCommit.id);
         File branch = join(BRANCHES, readContentsAsString(activeBranch));
@@ -294,7 +300,8 @@ public class Repository {
         writeContents(head, commitID);
         for (Map.Entry<String, String> set : replaceFiles.entrySet()) {
             File file = join(CWD, set.getKey());
-            writeContents(file, set.getValue());
+            File blob = join(FILES, set.getValue());
+            writeContents(file, readContentsAsString(blob));
             activeCommitFiles.remove(set.getKey());
         }
         for (Map.Entry<String, String> set: activeCommitFiles.entrySet()) {
@@ -333,6 +340,8 @@ public class Repository {
 
     public static void merge(String branchName) {
         String currentBranch = readContentsAsString(activeBranch);
+        String currentBranchID = readContentsAsString(head);
+
         if (branchName.equals(currentBranch)) {
             throw new GitletException("Cannot merge a branch with itself");
         }
@@ -354,7 +363,7 @@ public class Repository {
                     " of the current branch.");
             System.exit(1);
         }
-        if (splitPointID.equals(readContentsAsString(head))) {
+        if (splitPointID.equals(currentBranchID)) {
             switchActiveCommit(branchID);
             writeContents(join(BRANCHES, "current"), currentBranch);
             writeContents(join(BRANCHES, currentBranch), splitPointID);
@@ -362,6 +371,63 @@ public class Repository {
             System.out.println("Current branch fast-forwarded.");
             System.exit(1);
         }
+
+        merge(currentBranchID, branchID, splitPointID);
+        commit("Merged " + branchName + " into " + currentBranch, branchID);
+    }
+
+    //Helper method for merge.
+    private static void merge(String active, String given, String split){
+        StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
+        HashMap<String, String> activeF = checkOutCommit(active).getFiles();
+        HashMap<String, String> givenF = checkOutCommit(given).getFiles();
+        HashMap<String, String> splitF = checkOutCommit(split).getFiles();
+
+        for (Map.Entry<String, String> set : activeF.entrySet()) {
+            String fileName = set.getKey();
+            String activeFsha = set.getValue();
+            String splitFsha = splitF.get(fileName);
+
+            if (activeFsha.equals(splitFsha) && !givenF.containsKey(fileName)) {
+                stagingArea.map.put(fileName, null);
+            }
+        }
+
+        for (Map.Entry<String, String> set : givenF.entrySet()) {
+            String fileName = set.getKey();
+            String givenFsha = set.getValue();
+            String activeFsha = activeF.get(fileName);
+            String splitFsha = splitF.get(fileName);
+
+            if (splitFsha == null) {
+                if (activeFsha == null) {
+                    checkOutFileInCommit(given, fileName);
+                    String content = readContentsAsString(join(FILES, givenFsha));
+                    stagingArea.map.put(fileName, content);
+                }
+            } else {
+                if (!givenFsha.equals(splitFsha)
+                        && activeFsha.equals(splitFsha)) {
+                    checkOutFileInCommit(given, fileName);
+                    String content = readContentsAsString(join(FILES, givenFsha));
+                    stagingArea.map.put(fileName, content);
+                } else if (!givenFsha.equals(splitFsha)
+                        && !activeFsha.equals(givenFsha)) {
+                    File aFile = join(FILES, activeFsha);
+                    File gFile = join(FILES, givenFsha);
+                    StringBuilder fileContents = new StringBuilder();
+                    fileContents.append("<<<<<<< HEAD\n");
+                    fileContents.append(readContentsAsString(aFile));
+                    fileContents.append("=======\n");
+                    fileContents.append(readContentsAsString(gFile));
+                    fileContents.append(">>>>>>>");
+                    writeContents(join(CWD, fileName), fileContents.toString());
+                    stagingArea.map.put(fileName, fileContents.toString());
+                }
+            }
+        }
+
+        writeObject(STAGING_AREA, stagingArea);
     }
 
     // Helper method to find and return split point.

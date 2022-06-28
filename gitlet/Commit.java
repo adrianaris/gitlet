@@ -5,7 +5,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 
 /**
  * Represents a gitlet commit object.
@@ -37,6 +36,7 @@ public class Commit implements Serializable {
     public Commit(String message,
                   String author,
                   String parent,
+                  String mergeParent,
                   HashMap<String, String> files) {
         this.author = author;
         this.message = message;
@@ -46,7 +46,7 @@ public class Commit implements Serializable {
                 ? DATE_FORMAT.format(new Date(0))
                 : DATE_FORMAT.format(new Date());
         id = files == null ? Utils.sha1() : Utils.sha1(files.toString());
-        mergeParent = null;
+        this.mergeParent = mergeParent;
     }
 
     public void merge(Commit commit, String message) {
