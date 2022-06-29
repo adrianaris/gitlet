@@ -171,6 +171,32 @@ public class Repository {
     }
 
     public static void globalLog() {
+        HashSet<String> commits = getAllCommits();
+        for (String commit: commits) {
+            Commit com = checkOutCommit(commit);
+            com.print();
+        }
+    }
+
+    public static void find(String message) {
+        HashSet<String> commits = getAllCommits();
+        int found = 0;
+        for (String commit : commits) {
+            Commit com = checkOutCommit(commit);
+            if (message.equals(com.getMessage())) {
+                System.out.println(commit);
+                System.exit(1);
+            }
+            found++;
+        }
+        if (found == 0) {
+            System.out.println("Found no commit with that message.");
+        }
+    }
+
+    // Helper method to get a set of all the commits.
+    private static HashSet<String> getAllCommits() {
+        HashSet<String> set = new HashSet<>();
         List<String> commitDirs = fileNamesIn(COMMITS);
         assert commitDirs != null;
         for (String commitDir : commitDirs) {
@@ -178,26 +204,10 @@ public class Repository {
             List<String> commits = plainFilenamesIn(dir);
             assert commits != null;
             for (String commit: commits) {
-                Commit com = checkOutCommit(commitDir + commit);
-                com.print();
+                set.add(commitDir+commit);
             }
         }
-    }
-
-    public static void find(String message) {
-        List<String> commits = plainFilenamesIn(COMMITS);
-        int found = 0;
-        assert commits != null;
-        for (String commit : commits) {
-            Commit com = checkOutCommit(commit);
-            if (message.equals(com.getMessage())) {
-                System.out.println(commit);
-            }
-            found++;
-        }
-        if (found == 0) {
-            System.out.println("Found no commit with that message.");
-        }
+        return set;
     }
 
     public static void status() {
