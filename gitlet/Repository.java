@@ -29,7 +29,7 @@ public class Repository {
     /** This dir persists each commit object. */
     public static final File COMMITS = join(GITLET_DIR, "commits");
     /** This dir persists all versions of the repository's files. */
-    public static final File FILES = join(COMMITS, "files");
+    public static final File FILES = join(GITLET_DIR, "files");
     /** This file keeps track of which commit is currently active. */
     public static File head = join(GITLET_DIR, "HEAD");
     public static File activeBranch = join(BRANCHES, "current");
@@ -85,18 +85,24 @@ public class Repository {
                 writeObject(STAGING_AREA, stagingArea);
             }
         } else {
-            throw new GitletException("File does not exist.");
+            System.out.println("File does not exist.");
+            System.exit(0);
         }
     }
 
     public static void commit(String message) {
+        if (message.length() == 0) {
+            System.out.println("Please enter a commit message.");
+            System.exit(0);
+        }
         commit(message, null);
     }
 
     private static void commit(String message, String mergedInCommitID) {
         StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
         if (stagingArea.map.isEmpty()) {
-            throw new GitletException("No changes added to the commit.");
+            System.out.println("No changes added to the commit.");
+            System.exit(0);
         }
         Commit parentCommit = checkOutCommit(readContentsAsString(head));
         HashMap<String, String> newCommitFiles = parentCommit.isEmpty()
@@ -135,9 +141,16 @@ public class Repository {
         StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
         Commit currentCommit = checkOutCommit(readContentsAsString(head));
         HashMap<String, String> commitedFiles = currentCommit.getFiles();
-        if (!stagingArea.map.containsKey(fileName)
-                && !commitedFiles.containsKey(fileName)) {
-            throw new GitletException("No reason to remove the file.");
+        if (!commitedFiles.containsKey(fileName)) {
+            if (!stagingArea.map.containsKey(fileName)) {
+                System.out.println("No reason to remove the file.");
+                System.exit(0);
+            } else {
+                stagingArea.map.remove(fileName);
+                writeObject(STAGING_AREA, stagingArea);
+                System.exit(1);
+            }
+
         }
         stagingArea.map.put(fileName, null);
         writeObject(STAGING_AREA, stagingArea);
@@ -158,11 +171,16 @@ public class Repository {
     }
 
     public static void globalLog() {
-        List<String> commits = plainFilenamesIn(COMMITS);
-        assert commits != null;
-        for (String commit : commits) {
-            Commit com = checkOutCommit(commit);
-            com.print();
+        List<String> commitDirs = fileNamesIn(COMMITS);
+        assert commitDirs != null;
+        for (String commitDir : commitDirs) {
+            File dir = join(COMMITS, commitDir);
+            List<String> commits = plainFilenamesIn(dir);
+            assert commits != null;
+            for (String commit: commits) {
+                Commit com = checkOutCommit(commitDir + commit);
+                com.print();
+            }
         }
     }
 
@@ -195,6 +213,26 @@ public class Repository {
         StringBuilder modificationsNotStaged = new StringBuilder();
         StringBuilder untrackedFiles = new StringBuilder();
 
+        if (commitedFiles != null) {
+            for (Map.Entry<String, String> set : commitedFiles.entrySet()) {
+                String fileName = set.getKey();
+                String commitedSha = set.getValue();
+                if ((currentFiles == null || !currentFiles.contains(fileName))
+                        && !stagingArea.map.containsKey(fileName)) {
+                    modificationsNotStaged.append(fileName)
+                            .append(" (deleted)").append("\n");
+                } else if (currentFiles != null
+                        && currentFiles.contains(fileName)
+                        && !stagingArea.map.containsKey(fileName)
+                        && !commitedSha.equals(
+                        sha1(readContentsAsString(join(CWD, fileName)))
+                )) {
+                    modificationsNotStaged.append(fileName)
+                            .append(" (modified)").append("\n");
+                }
+            }
+        }
+
         for (Map.Entry<String, String> set: stagingArea.map.entrySet()) {
             String fileName = set.getKey();
             if (set.getValue() == null) {
@@ -202,48 +240,21 @@ public class Repository {
             } else {
                 stagedFiles.append(fileName).append("\n");
             }
-            if (currentFiles != null && !currentFiles.contains(fileName)) {
-                modificationsNotStaged.append(fileName)
-                        .append(" (deleted)").append("\n");
-            } else if (currentFiles != null
-                    && currentFiles.contains(fileName)
-                    && !sha1(set.getValue()).equals(
-                            sha1(readContentsAsString(
-                                            join(CWD, fileName))))) {
-                modificationsNotStaged.append(fileName)
-                        .append(" (modified)").append("\n");
-            }
-        }
-        assert currentFiles != null;
-        for (String fileName : currentFiles) {
-            if (commitedFiles == null
-                    || !commitedFiles.containsKey(fileName)
-                    && !stagingArea.map.containsKey(fileName)) {
-                untrackedFiles.append(fileName).append("\n");
-            } else if (commitedFiles.containsKey(fileName)
-                    && !stagingArea.map.containsKey(fileName)
-                    && !commitedFiles.get(fileName).equals(
-                            sha1(readContentsAsString(
-                                            join(CWD, fileName))))) {
-                modificationsNotStaged.append(fileName)
-                        .append(" (modified)").append("\n");
-            }
         }
         System.out.println("=== Branches ===");
         assert branches != null;
         for (String branch : branches) {
             if (!branch.equals("current")) {
                 if (branch.equals(currentBranch)) {
-                    System.out.println("*" + branch);
+                    System.out.println("*" + branch + "\n");
                 } else {
-                    System.out.println(branch);
+                    System.out.println(branch  + "\n");
                 }
             }
         }
-        System.out.println();
         System.out.println("=== Staged Files ===");
         System.out.println(stagedFiles);
-        System.out.println("=== Removed Files ");
+        System.out.println("=== Removed Files ===");
         System.out.println(removedFiles);
         System.out.println("=== Modifications Not Staged For Commit ===");
         System.out.println(modificationsNotStaged);
@@ -264,13 +275,15 @@ public class Repository {
             File commitedFile = join(FILES, commitFiles.get(fileName));
             writeContents(file, readContentsAsString(commitedFile));
         } else {
-            throw new GitletException("File does not exist in that commit.");
+            System.out.println("File does not exist in that commit.");
+            System.exit(0);
         }
     }
 
     public static void checkOutBranch(String branchName) {
         if (readContentsAsString(activeBranch).equals(branchName)) {
-            throw new GitletException("No need to checkout the current branch");
+            System.out.println("No need to checkout the current branch");
+            System.exit(0);
         }
         File branch = join(BRANCHES, branchName);
         if (branch.exists()) {
@@ -278,36 +291,11 @@ public class Repository {
             switchActiveCommit(branchID);
             writeContents(join(BRANCHES, "current"), branchName);
         } else {
-            throw new GitletException("No such branch exists.");
+            System.out.println("No such branch exists.");
+            System.exit(0);
         }
     }
 
-    // Helper method that replaces active CWD files with the version
-    // of files in the provided commit.
-    private static void switchActiveCommit(String commitID) {
-        HashMap<String, String> activeCommitFiles =
-                checkOutCommit(readContentsAsString(head)).getFiles();
-        HashMap<String, String> replaceFiles =
-                checkOutCommit(commitID).getFiles();
-        List<String> currentFiles = plainFilenamesIn(CWD);
-        for (String file : currentFiles) {
-            if (!activeCommitFiles.containsKey(file) &&
-                    replaceFiles.containsKey(file)) {
-                throw new GitletException("There is an untracked file in the" +
-                        " way; delete it, or add and commit it first.");
-            }
-        }
-        writeContents(head, commitID);
-        for (Map.Entry<String, String> set : replaceFiles.entrySet()) {
-            File file = join(CWD, set.getKey());
-            File blob = join(FILES, set.getValue());
-            writeContents(file, readContentsAsString(blob));
-            activeCommitFiles.remove(set.getKey());
-        }
-        for (Map.Entry<String, String> set: activeCommitFiles.entrySet()) {
-            restrictedDelete(join(CWD, set.getKey()));
-        }
-    }
 
     public static void branch(String branchName) {
         List<String> currentBranches = plainFilenamesIn(BRANCHES);
@@ -323,14 +311,16 @@ public class Repository {
     public static void rm_branch(String branchName) {
         String currentBranch = readContentsAsString(join(BRANCHES, "current"));
         if (currentBranch.equals(branchName)) {
-            throw new GitletException("Cannot remove the current branch.");
+            System.out.println("Cannot remove the current branch.");
+            System.exit(0);
         }
         File branch = join(BRANCHES, branchName);
         if (branch.exists()) {
             restrictedDelete(branch);
         } else {
-            throw new GitletException("A branch with that" +
+            System.out.println("A branch with that" +
                     " name does not exist.");
+            System.exit(0);
         }
     }
 
@@ -343,16 +333,19 @@ public class Repository {
         String currentBranchID = readContentsAsString(head);
 
         if (branchName.equals(currentBranch)) {
-            throw new GitletException("Cannot merge a branch with itself");
+            System.out.println("Cannot merge a branch with itself");
+            System.exit(0);
         }
         File branch = join(BRANCHES, branchName);
         if (!branch.exists()) {
-            throw new GitletException("A branch with that" +
+            System.out.println("A branch with that" +
                     " name does not exist.");
+            System.exit(0);
         }
         StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
         if (!stagingArea.map.isEmpty()) {
-            throw new GitletException("You have uncommitted changes.");
+            System.out.println("You have uncommitted changes.");
+            System.exit(0);
         }
 
         String branchID = readContentsAsString(branch);
@@ -361,7 +354,7 @@ public class Repository {
         if (branchID.equals(splitPointID)) {
             System.out.println("Given branch is an ancestor" +
                     " of the current branch.");
-            System.exit(1);
+            System.exit(0);
         }
         if (splitPointID.equals(currentBranchID)) {
             switchActiveCommit(branchID);
@@ -463,11 +456,16 @@ public class Repository {
         if (sha1 == null) {
             return null;
         }
+        if (sha1.length() < 4) {
+            System.out.println("Commit id is too short.");
+            System.exit(0);
+        }
         File commitDir = join(COMMITS, sha1.substring(0, 4));
         File commitFile = join(commitDir, sha1.substring(4));
         if (sha1.length() < 40) {
             if (!commitDir.exists()) {
-                throw new GitletException("No commit with that id exists.");
+                System.out.println("No commit with that id exists.");
+                System.exit(0);
             }
             List<String> commits = plainFilenamesIn(commitDir);
             assert commits != null;
@@ -478,7 +476,8 @@ public class Repository {
             }
         }
         if (!commitFile.exists()) {
-            throw new GitletException("No commit with that id exists.");
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
         }
         return readObject(commitFile, Commit.class);
     }
@@ -490,6 +489,34 @@ public class Repository {
             commitDir.mkdir();
         }
         return join(commitDir, sha1.substring(4));
+    }
+
+    // Helper method that replaces active CWD files with the version
+    // of files in the provided commit.
+    private static void switchActiveCommit(String commitID) {
+        HashMap<String, String> activeCommitFiles =
+                checkOutCommit(readContentsAsString(head)).getFiles();
+        HashMap<String, String> replaceFiles =
+                checkOutCommit(commitID).getFiles();
+        List<String> currentFiles = plainFilenamesIn(CWD);
+        for (String file : currentFiles) {
+            if (!activeCommitFiles.containsKey(file) &&
+                    replaceFiles.containsKey(file)) {
+                System.out.println("There is an untracked file in the" +
+                        " way; delete it, or add and commit it first.");
+                System.exit(0);
+            }
+        }
+        writeContents(head, commitID);
+        for (Map.Entry<String, String> set : replaceFiles.entrySet()) {
+            File file = join(CWD, set.getKey());
+            File blob = join(FILES, set.getValue());
+            writeContents(file, readContentsAsString(blob));
+            activeCommitFiles.remove(set.getKey());
+        }
+        for (Map.Entry<String, String> set: activeCommitFiles.entrySet()) {
+            restrictedDelete(join(CWD, set.getKey()));
+        }
     }
 
     // Helper class for staging.

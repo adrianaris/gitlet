@@ -188,6 +188,18 @@ class Utils {
         return plainFilenamesIn(new File(dir));
     }
 
+    static List<String> fileNamesIn(File dir) {
+        String[] files = dir.list();
+        if (files == null) {
+            return null;
+        } else {
+            return Arrays.asList(files);
+        }
+    }
+
+    static List<String> fileNamesIn(String dir) {
+        return fileNamesIn(new File(dir));
+    }
     /* OTHER FILE UTILITIES */
 
     /** Return the concatentation of FIRST and OTHERS into a File designator,
