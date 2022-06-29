@@ -92,6 +92,11 @@ public class Main {
                 checkIfGitletDirExists();
                 Repository.reset(args[1]);
                 break;
+            case "merge":
+                validateNumArgs("merge", args, 2);
+                checkIfGitletDirExists();
+                Repository.merge(args[1]);
+                break;
             default:
                 throw  new GitletException("Unknown command: " + args[0]);
         }

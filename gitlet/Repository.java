@@ -334,7 +334,7 @@ public class Repository {
         }
         File branch = join(BRANCHES, branchName);
         if (branch.exists()) {
-            restrictedDelete(branch);
+            branch.delete();
         } else {
             System.out.println("A branch with that"
                     + " name does not exist.");
@@ -351,7 +351,7 @@ public class Repository {
         String currentBranchID = readContentsAsString(HEAD);
 
         if (branchName.equals(currentBranch)) {
-            System.out.println("Cannot merge a branch with itself");
+            System.out.println("Cannot merge a branch with itself.");
             System.exit(0);
         }
         File branch = join(BRANCHES, branchName);
@@ -378,7 +378,7 @@ public class Repository {
             switchActiveCommit(branchID);
             writeContents(join(BRANCHES, "current"), currentBranch);
             writeContents(join(BRANCHES, currentBranch), splitPointID);
-            restrictedDelete(join(BRANCHES, branchName));
+            join(BRANCHES, branchName).delete();
             System.out.println("Current branch fast-forwarded.");
             System.exit(1);
         }
@@ -452,10 +452,15 @@ public class Repository {
     private static String bfs(HashSet<String> set,
                               String branch1,
                               String branch2) {
-        if (set.contains(branch1) && branch1 != null) {
+        if (branch1 != null && branch2 != null) {
+            if (branch1.equals(branch2)) {
+                return branch1;
+            }
+        }
+        if (branch1 != null && set.contains(branch1)) {
             return branch1;
         }
-        if (set.contains(branch2) && branch2 != null) {
+        if (branch2 != null && set.contains(branch2)) {
             return branch2;
         }
         set.add(branch1);
