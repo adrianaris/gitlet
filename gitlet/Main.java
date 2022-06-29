@@ -82,7 +82,7 @@ public class Main {
             case "rm-branch":
                 validateNumArgs("rm-branch", args, 2);
                 checkIfGitletDirExists();
-                Repository.rm_branch(args[1]);
+                Repository.rmBranch(args[1]);
                 break;
             case "reset":
                 validateNumArgs("reset", args, 2);

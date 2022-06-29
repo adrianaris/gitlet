@@ -17,7 +17,7 @@ import java.util.HashMap;
  */
 public class Commit implements Serializable {
     /** The ID of this commit */
-    public String id;
+    private String id;
     /** The message of this Commit. */
     private String message;
     /** Author of the Commit. */
@@ -49,15 +49,6 @@ public class Commit implements Serializable {
         this.mergeParent = mergeParent;
     }
 
-    public void merge(Commit commit, String message) {
-        mergeParent = commit.getParent();
-        HashMap<String, String> toBeMergedMap = commit.getFiles();
-        files.putAll(toBeMergedMap);
-        date = DATE_FORMAT.format(new Date());
-        id = Utils.sha1(files.toString());
-        this.message = message;
-    }
-
     public boolean isEmpty() {
         return files == null;
     }
@@ -69,9 +60,9 @@ public class Commit implements Serializable {
         System.out.println("===");
         System.out.println("commit " + id);
         if (mergeParent != null) {
-            System.out.println("Merge: " +
-                    parent.substring(0, 6) + " " +
-                    mergeParent.substring(0, 6));
+            System.out.println("Merge: "
+                    + parent.substring(0, 6) + " "
+                    + mergeParent.substring(0, 6));
         }
         System.out.println("Date: " + date);
         System.out.println(message);
