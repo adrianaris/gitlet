@@ -221,7 +221,18 @@ public class Repository {
         StringBuilder removedFiles = new StringBuilder();
         StringBuilder modificationsNotStaged = new StringBuilder();
         StringBuilder untrackedFiles = new StringBuilder();
+        StringBuilder branchFiles = new StringBuilder();
 
+        assert branches != null;
+        for (String branch : branches) {
+            if (!branch.equals("current")) {
+                if (branch.equals(currentBranch)) {
+                    branchFiles.append("*" + branch).append("\n");
+                } else {
+                    branchFiles.append(branch).append("\n");
+                }
+            }
+        }
         if (commitedFiles != null) {
             for (Map.Entry<String, String> set : commitedFiles.entrySet()) {
                 String fileName = set.getKey();
@@ -260,16 +271,7 @@ public class Repository {
             }
         }
         System.out.println("=== Branches ===");
-        assert branches != null;
-        for (String branch : branches) {
-            if (!branch.equals("current")) {
-                if (branch.equals(currentBranch)) {
-                    System.out.println("*" + branch + "\n");
-                } else {
-                    System.out.println(branch  + "\n");
-                }
-            }
-        }
+        System.out.println(branchFiles);
         System.out.println("=== Staged Files ===");
         System.out.println(stagedFiles);
         System.out.println("=== Removed Files ===");
