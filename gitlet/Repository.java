@@ -185,9 +185,8 @@ public class Repository {
             Commit com = checkOutCommit(commit);
             if (message.equals(com.getMessage())) {
                 System.out.println(commit);
-                System.exit(1);
+                found++;
             }
-            found++;
         }
         if (found == 0) {
             System.out.println("Found no commit with that message.");
@@ -317,18 +316,16 @@ public class Repository {
 
 
     public static void branch(String branchName) {
-        List<String> currentBranches = plainFilenamesIn(BRANCHES);
-        assert currentBranches != null;
-        if (currentBranches.contains(branchName)) {
-            throw new GitletException("A branch with that name already exists.");
-        }
         File branch = join(BRANCHES, branchName);
+        if (branch.exists()) {
+            System.out.println("A branch with that name already exists.");
+            System.exit(0);
+        }
         writeContents(branch, readContentsAsString(HEAD));
-        writeContents(activeBranch, branchName);
     }
 
     public static void rmBranch(String branchName) {
-        String currentBranch = readContentsAsString(join(BRANCHES, "current"));
+        String currentBranch = readContentsAsString(activeBranch);
         if (currentBranch.equals(branchName)) {
             System.out.println("Cannot remove the current branch.");
             System.exit(0);
