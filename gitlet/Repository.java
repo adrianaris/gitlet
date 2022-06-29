@@ -32,8 +32,8 @@ public class Repository {
     public static final File FILES = join(GITLET_DIR, "files");
     /** This file keeps track of which commit is currently active. */
     private static final File HEAD = join(GITLET_DIR, "HEAD");
-    private static final File activeBranch = join(BRANCHES, "current");
-    public static File STAGING_AREA = join(GITLET_DIR, "INDEX");
+    private static final File ACTIVE_BRANCH = join(BRANCHES, "current");
+    private static final File STAGING_AREA = join(GITLET_DIR, "INDEX");
 
     public static void init() {
         if (GITLET_DIR.exists()) {
@@ -60,7 +60,7 @@ public class Repository {
         writeObject(newCommit, initCommit);
         writeContents(branch, initCommit.getId());
         writeContents(HEAD, initCommit.getId());
-        writeContents(activeBranch, "master");
+        writeContents(ACTIVE_BRANCH, "master");
         writeObject(STAGING_AREA, new StagingArea());
     }
 
@@ -129,7 +129,7 @@ public class Repository {
                 newCommitFiles
         );
         File commit = createCommitFile(newCommit.getId());
-        File branch = join(BRANCHES, readContentsAsString(activeBranch));
+        File branch = join(BRANCHES, readContentsAsString(ACTIVE_BRANCH));
         writeObject(commit, newCommit);
         writeContents(branch, newCommit.getId());
         writeContents(HEAD, newCommit.getId());
@@ -301,7 +301,7 @@ public class Repository {
     }
 
     public static void checkOutBranch(String branchName) {
-        if (readContentsAsString(activeBranch).equals(branchName)) {
+        if (readContentsAsString(ACTIVE_BRANCH).equals(branchName)) {
             System.out.println("No need to checkout the current branch");
             System.exit(0);
         }
@@ -327,7 +327,7 @@ public class Repository {
     }
 
     public static void rmBranch(String branchName) {
-        String currentBranch = readContentsAsString(activeBranch);
+        String currentBranch = readContentsAsString(ACTIVE_BRANCH);
         if (currentBranch.equals(branchName)) {
             System.out.println("Cannot remove the current branch.");
             System.exit(0);
@@ -347,7 +347,7 @@ public class Repository {
     }
 
     public static void merge(String branchName) {
-        String currentBranch = readContentsAsString(activeBranch);
+        String currentBranch = readContentsAsString(ACTIVE_BRANCH);
         String currentBranchID = readContentsAsString(HEAD);
 
         if (branchName.equals(currentBranch)) {
