@@ -517,23 +517,33 @@ public class Repository {
         HashMap<String, String> replaceFiles =
                 checkOutCommit(commitID).getFiles();
         List<String> currentFiles = plainFilenamesIn(CWD);
-        for (String file : currentFiles) {
-            if (!activeCommitFiles.containsKey(file)
-                    && replaceFiles.containsKey(file)) {
-                System.out.println("There is an untracked file in the"
-                        + " way; delete it, or add and commit it first.");
-                System.exit(0);
+        if (currentFiles != null) {
+            for (String file : currentFiles) {
+                if ((activeCommitFiles == null
+                        || !activeCommitFiles.containsKey(file))
+                        && (replaceFiles != null
+                        && replaceFiles.containsKey(file))) {
+                    System.out.println("There is an untracked file in the"
+                            + " way; delete it, or add and commit it first.");
+                    System.exit(0);
+                }
             }
         }
         writeContents(HEAD, commitID);
-        for (Map.Entry<String, String> set : replaceFiles.entrySet()) {
-            File file = join(CWD, set.getKey());
-            File blob = join(FILES, set.getValue());
-            writeContents(file, readContentsAsString(blob));
-            activeCommitFiles.remove(set.getKey());
+        if (replaceFiles != null) {
+            for (Map.Entry<String, String> set : replaceFiles.entrySet()) {
+                File file = join(CWD, set.getKey());
+                File blob = join(FILES, set.getValue());
+                writeContents(file, readContentsAsString(blob));
+            }
         }
-        for (Map.Entry<String, String> set: activeCommitFiles.entrySet()) {
-            restrictedDelete(join(CWD, set.getKey()));
+        if (activeCommitFiles != null) {
+            for (Map.Entry<String, String> set: activeCommitFiles.entrySet()) {
+                if (replaceFiles == null
+                        || !replaceFiles.containsKey(set.getKey())) {
+                    restrictedDelete(join(CWD, set.getKey()));
+                }
+            }
         }
     }
 
