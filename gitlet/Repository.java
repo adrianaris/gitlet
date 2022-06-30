@@ -73,6 +73,13 @@ public class Repository {
         if (currentFiles == null) {
             throw new GitletException("CWD is empty");
         }
+        if (stagingArea.map.containsKey(fileName)
+                && stagingArea.map.get(fileName) == null) {
+            stagingArea.map.remove(fileName);
+            checkOutFileInCommit(currentCommit.getId(), fileName);
+            writeObject(STAGING_AREA, stagingArea);
+            System.exit(1);
+        }
         if (currentFiles.contains(fileName)) {
             File file = join(CWD, fileName);
             String contents = readContentsAsString(file);

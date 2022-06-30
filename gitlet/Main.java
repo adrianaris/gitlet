@@ -11,7 +11,8 @@ public class Main {
     public static void main(String[] args) {
         String firstArg = args[0];
         if (firstArg == null) {
-            throw new GitletException("No command provided.");
+            System.out.println("Please enter a command.");
+            System.exit(0);
         }
         switch(firstArg) {
             case "init":
@@ -98,14 +99,14 @@ public class Main {
                 Repository.merge(args[1]);
                 break;
             default:
-                throw  new GitletException("Unknown command: " + args[0]);
+                System.out.println("No command with that name exists.");
         }
     }
 
     public static void checkIfGitletDirExists() {
         if (!Repository.GITLET_DIR.exists()) {
-            throw new GitletException("No gitlet version control exists" +
-                    " in the current directory.");
+            System.out.println("Not in an initialized Gitlet directory.");
+            System.exit(0);
         }
     }
 

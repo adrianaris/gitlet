@@ -61,8 +61,8 @@ public class Commit implements Serializable {
         System.out.println("commit " + id);
         if (mergeParent != null) {
             System.out.println("Merge: "
-                    + parent.substring(0, 6) + " "
-                    + mergeParent.substring(0, 6));
+                    + parent.substring(0, 7) + " "
+                    + mergeParent.substring(0, 7));
         }
         System.out.println("Date: " + date);
         System.out.println(message);
