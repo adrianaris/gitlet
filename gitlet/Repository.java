@@ -153,6 +153,7 @@ public class Repository {
 
         }
         stagingArea.map.put(fileName, null);
+        restrictedDelete(join(CWD, fileName));
         writeObject(STAGING_AREA, stagingArea);
     }
 
@@ -367,6 +368,7 @@ public class Repository {
         }
 
         String branchID = readContentsAsString(branch);
+        checkUntracked(branchID);
         String splitPointID = splitPointID(branchID);
 
         if (branchID.equals(splitPointID)) {
@@ -397,7 +399,7 @@ public class Repository {
         for (Map.Entry<String, String> set : activeF.entrySet()) {
             String fileName = set.getKey();
             String activeFsha = set.getValue();
-            String splitFsha = splitF.get(fileName);
+            String splitFsha = splitF != null ? splitF.get(fileName) : null;
 
             if (activeFsha.equals(splitFsha) && !givenF.containsKey(fileName)) {
                 stagingArea.map.put(fileName, null);
@@ -408,7 +410,7 @@ public class Repository {
             String fileName = set.getKey();
             String givenFsha = set.getValue();
             String activeFsha = activeF.get(fileName);
-            String splitFsha = splitF.get(fileName);
+            String splitFsha = splitF != null ? splitF.get(fileName) : null;
 
             if (splitFsha == null) {
                 if (activeFsha == null) {
@@ -434,6 +436,7 @@ public class Repository {
                     fileContents.append(">>>>>>>");
                     writeContents(join(CWD, fileName), fileContents.toString());
                     stagingArea.map.put(fileName, fileContents.toString());
+                    System.out.println("Encountered a merge conflict.");
                 }
             }
         }
@@ -521,19 +524,7 @@ public class Repository {
                 checkOutCommit(readContentsAsString(HEAD)).getFiles();
         HashMap<String, String> replaceFiles =
                 checkOutCommit(commitID).getFiles();
-        List<String> currentFiles = plainFilenamesIn(CWD);
-        if (currentFiles != null) {
-            for (String file : currentFiles) {
-                if ((activeCommitFiles == null
-                        || !activeCommitFiles.containsKey(file))
-                        && (replaceFiles != null
-                        && replaceFiles.containsKey(file))) {
-                    System.out.println("There is an untracked file in the"
-                            + " way; delete it, or add and commit it first.");
-                    System.exit(0);
-                }
-            }
-        }
+        checkUntracked(commitID);
         writeContents(HEAD, commitID);
         if (replaceFiles != null) {
             for (Map.Entry<String, String> set : replaceFiles.entrySet()) {
@@ -547,6 +538,27 @@ public class Repository {
                 if (replaceFiles == null
                         || !replaceFiles.containsKey(set.getKey())) {
                     restrictedDelete(join(CWD, set.getKey()));
+                }
+            }
+        }
+    }
+
+    // Helper method to check untracked files.
+    private static void checkUntracked(String givenCommit) {
+        HashMap<String, String> activeCommitFiles =
+                checkOutCommit(readContentsAsString(HEAD)).getFiles();
+        HashMap<String, String> givenFiles =
+                checkOutCommit(givenCommit).getFiles();
+        List<String> currentFiles = plainFilenamesIn(CWD);
+        if (currentFiles != null) {
+            for (String file : currentFiles) {
+                if ((activeCommitFiles == null
+                        || !activeCommitFiles.containsKey(file))
+                        && (givenFiles != null
+                        && givenFiles.containsKey(file))) {
+                    System.out.println("There is an untracked file in the"
+                            + " way; delete it, or add and commit it first.");
+                    System.exit(0);
                 }
             }
         }
