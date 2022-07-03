@@ -9,54 +9,54 @@ public class Main {
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
     public static void main(String[] args) {
-        if (args == null) {
+        if (args.length == 0) {
             System.out.println("Please enter a command.");
             System.exit(0);
         }
         String firstArg = args[0];
         switch (firstArg) {
-            case "init" -> {
+            case "init":
                 validateNumArgs("init", args, 1);
                 Repository.init();
-            }
-            case "add" -> {
+                break;
+            case "add":
                 validateNumArgs("add", args, 2);
                 checkIfGitletDirExists();
                 Repository.add(args[1]);
-            }
-            case "commit" -> {
+                break;
+            case "commit":
                 if (args.length != 2) {
                     throw new GitletException("no message");
                 }
                 checkIfGitletDirExists();
                 Repository.commit(args[1]);
-            }
-            case "rm" -> {
+                break;
+            case "rm":
                 validateNumArgs("rm", args, 2);
                 checkIfGitletDirExists();
                 Repository.rm(args[1]);
-            }
-            case "log" -> {
+                break;
+            case "log":
                 validateNumArgs("log", args, 1);
                 checkIfGitletDirExists();
                 Repository.log();
-            }
-            case "global-log" -> {
+                break;
+            case "global-log":
                 validateNumArgs("global-log", args, 1);
                 checkIfGitletDirExists();
                 Repository.globalLog();
-            }
-            case "find" -> {
+                break;
+            case "find":
                 validateNumArgs("find", args, 2);
                 checkIfGitletDirExists();
                 Repository.find(args[1]);
-            }
-            case "status" -> {
+                break;
+            case "status":
                 validateNumArgs("status", args, 1);
                 checkIfGitletDirExists();
                 Repository.status();
-            }
-            case "checkout" -> {
+                break;
+            case "checkout":
                 checkIfGitletDirExists();
                 if (args.length == 2) {
                     Repository.checkOutBranch(args[1]);
@@ -77,28 +77,30 @@ public class Main {
                             " for: checkout");
                     System.exit(0);
                 }
-            }
-            case "branch" -> {
+                break;
+            case "branch":
                 validateNumArgs("branch", args, 2);
                 checkIfGitletDirExists();
                 Repository.branch(args[1]);
-            }
-            case "rm-branch" -> {
+                break;
+            case "rm-branch":
                 validateNumArgs("rm-branch", args, 2);
                 checkIfGitletDirExists();
                 Repository.rmBranch(args[1]);
-            }
-            case "reset" -> {
+                break;
+            case "reset":
                 validateNumArgs("reset", args, 2);
                 checkIfGitletDirExists();
                 Repository.reset(args[1]);
-            }
-            case "merge" -> {
+                break;
+            case "merge":
                 validateNumArgs("merge", args, 2);
                 checkIfGitletDirExists();
                 Repository.merge(args[1]);
-            }
-            default -> System.out.println("No command with that name exists.");
+                break;
+            default:
+                System.out.println("No command with that name exists.");
+                break;
         }
     }
 

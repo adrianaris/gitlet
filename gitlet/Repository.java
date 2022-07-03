@@ -76,7 +76,7 @@ public class Repository {
             stagingArea.map.remove(fileName);
             checkOutFileInCommit(currentCommit.getId(), fileName);
             writeObject(STAGING_AREA, stagingArea);
-            System.exit(1);
+            System.exit(0);
         }
 
         if (currentFiles == null) {
@@ -267,7 +267,7 @@ public class Repository {
             }
         }
         HashSet<String> untracked = checkUntracked();
-        for(String file : untracked) {
+        for (String file : untracked) {
             untrackedFiles.append(file).append("\n");
         }
 
@@ -393,12 +393,17 @@ public class Repository {
             System.exit(1);
         }
 
-        merge(currentBranchID, branchID, splitPointID);
-        commit("Merged " + branchName + " into " + currentBranch, branchID);
+        boolean conflict = merge(currentBranchID, branchID, splitPointID);
+        commit("Merged " + branchName + " into " + currentBranch + ".",
+                branchID);
+        if (conflict) {
+            System.out.println("Encountered a merge conflict.");
+        }
     }
 
     //Helper method for merge.
-    private static void merge(String active, String given, String split) {
+    private static boolean merge(String active, String given, String split) {
+        boolean conflict = false;
         StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
         HashMap<String, String> activeF = checkOutCommit(active).getFiles();
         HashMap<String, String> givenF = checkOutCommit(given).getFiles();
@@ -444,12 +449,13 @@ public class Repository {
                     fileContents.append(">>>>>>>");
                     writeContents(join(CWD, fileName), fileContents.toString());
                     stagingArea.map.put(fileName, fileContents.toString());
-                    System.out.println("Encountered a merge conflict.");
+                    conflict = true;
                 }
             }
         }
 
         writeObject(STAGING_AREA, stagingArea);
+        return conflict;
     }
 
     // Helper method to find and return split point.
@@ -594,7 +600,7 @@ public class Repository {
                 if ((activeCommitFiles == null
                         || !activeCommitFiles.containsKey(file))
                         && !stagingArea.map.containsKey(file)) {
-                   set.add(file);
+                    set.add(file);
                 }
             }
         }
