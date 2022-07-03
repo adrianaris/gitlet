@@ -133,8 +133,8 @@ public class Repository {
         Commit newCommit = new Commit(
                 message,
                 AUTHOR,
-                mergedInCommitID,
                 parentCommit.getId(),
+                mergedInCommitID,
                 newCommitFiles
         );
         File commit = createCommitFile(newCommit.getId());
