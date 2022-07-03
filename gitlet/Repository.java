@@ -68,12 +68,9 @@ public class Repository {
         StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
         List<String> currentFiles = plainFilenamesIn(CWD);
         Commit currentCommit = checkOutCommit(readContentsAsString(HEAD));
-        HashMap<String, String> currentCommitFileMap =
+        HashMap<String, String> commitFiles =
                 currentCommit.getFiles();
-        if (currentFiles == null) {
-            System.out.println("CWD is empty");
-            System.exit(0);
-        }
+
         if (stagingArea.map.containsKey(fileName)
                 && stagingArea.map.get(fileName) == null) {
             stagingArea.map.remove(fileName);
@@ -81,20 +78,24 @@ public class Repository {
             writeObject(STAGING_AREA, stagingArea);
             System.exit(1);
         }
-        if (currentFiles.contains(fileName)) {
-            File file = join(CWD, fileName);
-            String contents = readContentsAsString(file);
-            String sha1 = sha1(contents);
-            String commitedSHA = currentCommitFileMap == null
-                    ? null
-                    : currentCommitFileMap.get(fileName);
-            if (!sha1.equals(commitedSHA)) {
-                stagingArea.map.put(fileName, contents);
-                writeObject(STAGING_AREA, stagingArea);
-            }
-        } else {
+
+        if (currentFiles == null) {
+            System.out.println("CWD is empty");
+            System.exit(0);
+        } else if (!currentFiles.contains(fileName)) {
             System.out.println("File does not exist.");
             System.exit(0);
+        }
+
+        File file = join(CWD, fileName);
+        String contents = readContentsAsString(file);
+        String sha1 = sha1(contents);
+        String commitedSHA = commitFiles == null
+                ? null
+                : commitFiles.get(fileName);
+        if (!sha1.equals(commitedSHA)) {
+            stagingArea.map.put(fileName, contents);
+            writeObject(STAGING_AREA, stagingArea);
         }
     }
 
@@ -132,8 +133,8 @@ public class Repository {
         Commit newCommit = new Commit(
                 message,
                 AUTHOR,
-                parentCommit.getId(),
                 mergedInCommitID,
+                parentCommit.getId(),
                 newCommitFiles
         );
         File commit = createCommitFile(newCommit.getId());
@@ -147,22 +148,21 @@ public class Repository {
 
     public static void rm(String fileName) {
         StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
-        Commit currentCommit = checkOutCommit(readContentsAsString(HEAD));
-        HashMap<String, String> commitedFiles = currentCommit.getFiles();
-        if (commitedFiles == null || !commitedFiles.containsKey(fileName)) {
+        Commit activeCommit = checkOutCommit(readContentsAsString(HEAD));
+        boolean untracked = !activeCommit.getFiles().containsKey(fileName);
+        if (untracked) { //check if file is untracked so that we don't rm it
             if (!stagingArea.map.containsKey(fileName)) {
                 System.out.println("No reason to remove the file.");
                 System.exit(0);
-            } else {
+            } else { //should the file had been staged for addition remove it
                 stagingArea.map.remove(fileName);
                 writeObject(STAGING_AREA, stagingArea);
-                System.exit(1);
             }
-
+        } else {
+            stagingArea.map.put(fileName, null);
+            restrictedDelete(join(CWD, fileName));
+            writeObject(STAGING_AREA, stagingArea);
         }
-        stagingArea.map.put(fileName, null);
-        restrictedDelete(join(CWD, fileName));
-        writeObject(STAGING_AREA, stagingArea);
     }
 
     public static void log() {
@@ -170,6 +170,10 @@ public class Repository {
         log(currentCommit);
     }
 
+    /**
+     * Takes a Commit object as argument, traverses all the parents and at each
+     * step prints it.
+     */
     private static void log(Commit commit) {
         commit.print();
         String parentId = commit.getParent();
