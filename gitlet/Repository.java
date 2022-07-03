@@ -71,7 +71,8 @@ public class Repository {
         HashMap<String, String> currentCommitFileMap =
                 currentCommit.getFiles();
         if (currentFiles == null) {
-            throw new GitletException("CWD is empty");
+            System.out.println("CWD is empty");
+            System.exit(0);
         }
         if (stagingArea.map.containsKey(fileName)
                 && stagingArea.map.get(fileName) == null) {
@@ -260,14 +261,9 @@ public class Repository {
                 }
             }
         }
-        if (currentFiles != null) {
-            for (String fileName : currentFiles) {
-                if (!stagingArea.map.containsKey(fileName)
-                    && (commitedFiles == null
-                        || !commitedFiles.containsKey(fileName))) {
-                    untrackedFiles.append(fileName).append("\n");
-                }
-            }
+        HashSet<String> untracked = checkUntracked();
+        for(String file : untracked) {
+            untrackedFiles.append(file).append("\n");
         }
 
         for (Map.Entry<String, String> set: stagingArea.map.entrySet()) {
@@ -375,7 +371,7 @@ public class Repository {
         }
 
         String branchID = readContentsAsString(branch);
-        checkUntracked(branchID);
+        checkUntrackedFile();
         String splitPointID = splitPointID(branchID);
 
         if (branchID.equals(splitPointID)) {
@@ -484,7 +480,10 @@ public class Repository {
         return bfs(set, parent1, parent2);
     }
 
-    // Helper method to check out a commit.
+    /**
+     * Helper method to check out a commit.
+     * It just loads a commit into memory from a file it has been serialized to.
+     */
     private static Commit checkOutCommit(String sha1) {
         if (sha1 == null) {
             return null;
@@ -515,7 +514,16 @@ public class Repository {
         return readObject(commitFile, Commit.class);
     }
 
-    //Helper method to create commit file.
+    /**
+     * This method has the purpose of creating the commit file on the FS.
+     * We use a separate method so that we split the id into first four
+     * characters (which represent a directory that will contain the files
+     * with name the remaining  characters of the commit's sha1) and it returns
+     * the final commit File (which is the last 36 chars of the sha1)
+     * With this I'm trying to imitate somehow the original git!!!
+     * @param sha1
+     * @return File
+     */
     private static File createCommitFile(String sha1) {
         File commitDir = join(COMMITS, sha1.substring(0, 4));
         if (!commitDir.exists()) {
@@ -524,14 +532,17 @@ public class Repository {
         return join(commitDir, sha1.substring(4));
     }
 
-    // Helper method that replaces active CWD files with the version
-    // of files in the provided commit.
+    /**
+     * Helper method that replaces active CWD files with the version
+     * of files in the provided commit.
+     * @param commitID
+     */
     private static void switchActiveCommit(String commitID) {
         HashMap<String, String> activeCommitFiles =
                 checkOutCommit(readContentsAsString(HEAD)).getFiles();
         HashMap<String, String> replaceFiles =
                 checkOutCommit(commitID).getFiles();
-        checkUntracked(commitID);
+        checkUntrackedFile();
         writeContents(HEAD, commitID);
         if (replaceFiles != null) {
             for (Map.Entry<String, String> set : replaceFiles.entrySet()) {
@@ -550,25 +561,39 @@ public class Repository {
         }
     }
 
-    // Helper method to check untracked files.
-    private static void checkUntracked(String givenCommit) {
+    /**
+     * Helper method that only prints out an error to the terminal and exits
+     * should there be any untracked files.
+     */
+    private static void checkUntrackedFile() {
+        if (!checkUntracked().isEmpty()) {
+            System.out.println("There is an untracked file in the"
+                    + " way; delete it, or add and commit it first.");
+            System.exit(0);
+        }
+    }
+
+    /**
+     * Helper method that returns a set of untracked files, based on current
+     * active commit.
+     * @return set
+     */
+    private static HashSet<String> checkUntracked() {
         HashMap<String, String> activeCommitFiles =
                 checkOutCommit(readContentsAsString(HEAD)).getFiles();
-        HashMap<String, String> givenFiles =
-                checkOutCommit(givenCommit).getFiles();
+        StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
+        HashSet<String> set = new HashSet<>();
         List<String> currentFiles = plainFilenamesIn(CWD);
         if (currentFiles != null) {
             for (String file : currentFiles) {
                 if ((activeCommitFiles == null
                         || !activeCommitFiles.containsKey(file))
-                        && (givenFiles != null
-                        && givenFiles.containsKey(file))) {
-                    System.out.println("There is an untracked file in the"
-                            + " way; delete it, or add and commit it first.");
-                    System.exit(0);
+                        && !stagingArea.map.containsKey(file)) {
+                   set.add(file);
                 }
             }
         }
+        return set;
     }
 
     // Helper class for staging.
