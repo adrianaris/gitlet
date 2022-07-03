@@ -149,7 +149,8 @@ public class Repository {
     public static void rm(String fileName) {
         StagingArea stagingArea = readObject(STAGING_AREA, StagingArea.class);
         Commit activeCommit = checkOutCommit(readContentsAsString(HEAD));
-        boolean untracked = !activeCommit.getFiles().containsKey(fileName);
+        boolean untracked = activeCommit.isEmpty()
+                || !activeCommit.getFiles().containsKey(fileName);
         if (untracked) { //check if file is untracked so that we don't rm it
             if (!stagingArea.map.containsKey(fileName)) {
                 System.out.println("No reason to remove the file.");
@@ -240,7 +241,7 @@ public class Repository {
         for (String branch : branches) {
             if (!branch.equals("current")) {
                 if (branch.equals(currentBranch)) {
-                    branchFiles.append("*" + branch).append("\n");
+                    branchFiles.append("*").append(branch).append("\n");
                 } else {
                     branchFiles.append(branch).append("\n");
                 }
