@@ -14,59 +14,59 @@ public class Main {
             System.exit(0);
         }
         String firstArg = args[0];
-        switch(firstArg) {
-            case "init":
+        switch (firstArg) {
+            case "init" -> {
                 validateNumArgs("init", args, 1);
                 Repository.init();
-                break;
-            case "add":
+            }
+            case "add" -> {
                 validateNumArgs("add", args, 2);
                 checkIfGitletDirExists();
                 Repository.add(args[1]);
-                break;
-            case "commit":
+            }
+            case "commit" -> {
                 if (args.length != 2) {
                     throw new GitletException("no message");
                 }
                 checkIfGitletDirExists();
                 Repository.commit(args[1]);
-                break;
-            case "rm":
+            }
+            case "rm" -> {
                 validateNumArgs("rm", args, 2);
                 checkIfGitletDirExists();
                 Repository.rm(args[1]);
-                break;
-            case "log":
+            }
+            case "log" -> {
                 validateNumArgs("log", args, 1);
                 checkIfGitletDirExists();
                 Repository.log();
-                break;
-            case "global-log":
+            }
+            case "global-log" -> {
                 validateNumArgs("global-log", args, 1);
                 checkIfGitletDirExists();
                 Repository.globalLog();
-                break;
-            case "find":
+            }
+            case "find" -> {
                 validateNumArgs("find", args, 2);
                 checkIfGitletDirExists();
                 Repository.find(args[1]);
-                break;
-            case "status":
+            }
+            case "status" -> {
                 validateNumArgs("status", args, 1);
                 checkIfGitletDirExists();
                 Repository.status();
-                break;
-            case "checkout":
+            }
+            case "checkout" -> {
                 checkIfGitletDirExists();
                 if (args.length == 2) {
                     Repository.checkOutBranch(args[1]);
-                } else if(args.length == 3) {
+                } else if (args.length == 3) {
                     if (!args[1].equals("--")) {
                         System.out.println("Incorrect operands.");
                         System.exit(0);
                     }
                     Repository.checkOutFileInHead(args[2]);
-                } else if(args.length == 4) {
+                } else if (args.length == 4) {
                     if (!args[2].equals("--")) {
                         System.out.println("Incorrect operands.");
                         System.exit(0);
@@ -77,29 +77,28 @@ public class Main {
                             " for: checkout");
                     System.exit(0);
                 }
-                break;
-            case "branch":
+            }
+            case "branch" -> {
                 validateNumArgs("branch", args, 2);
                 checkIfGitletDirExists();
                 Repository.branch(args[1]);
-                break;
-            case "rm-branch":
+            }
+            case "rm-branch" -> {
                 validateNumArgs("rm-branch", args, 2);
                 checkIfGitletDirExists();
                 Repository.rmBranch(args[1]);
-                break;
-            case "reset":
+            }
+            case "reset" -> {
                 validateNumArgs("reset", args, 2);
                 checkIfGitletDirExists();
                 Repository.reset(args[1]);
-                break;
-            case "merge":
+            }
+            case "merge" -> {
                 validateNumArgs("merge", args, 2);
                 checkIfGitletDirExists();
                 Repository.merge(args[1]);
-                break;
-            default:
-                System.out.println("No command with that name exists.");
+            }
+            default -> System.out.println("No command with that name exists.");
         }
     }
 
