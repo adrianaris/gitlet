@@ -78,7 +78,7 @@ public class Repository {
         }
 
         if (currentFiles == null) {
-            System.out.println("CWD is empty")g
+            System.out.println("CWD is empty");
             System.exit(0);
         } else if (!currentFiles.contains(fileName)) {
             System.out.println("File does not exist.");
