@@ -1,0 +1,7 @@
+<<<<<<< HEAD
+f.txt
+mod
+=======
+f.txt
+another mod
+>>>>>>>

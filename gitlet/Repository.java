@@ -1,11 +1,10 @@
 package gitlet;
 
+import net.sf.saxon.ma.map.MapFunctionSet;
+
 import java.io.File;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static gitlet.Utils.*;
 
@@ -460,54 +459,47 @@ public class Repository {
 
     // Helper method to find and return split point.
     private static String splitPointID(String commitID) {
-        String headID = readContentsAsString(HEAD);
-        HashSet<String> givenG = new HashSet<>();
-        givenG = givenGraph(commitID, givenG);
-        HashMap<String, Integer> cAncestors = new HashMap<>();
-        cAncestors = commonAncestors(headID, givenG, cAncestors, 0);
-        Map.Entry<String, Integer> closest = null;
-        for (Map.Entry<String, Integer> entry : cAncestors.entrySet()) {
-            if (closest == null || closest.getValue() > entry.getValue()) {
-                closest = entry;
+        String head = readContentsAsString(HEAD);
+        HashMap<String, Date> hAnces = ancestors(head, new HashMap<>());
+        HashMap<String, Date> gAnces = ancestors(commitID, new HashMap<>());
+        String cAnces = null;
+        for (Map.Entry<String, Date> entry: hAnces.entrySet()) {
+            if (gAnces.containsKey(entry.getKey())) {
+                if (cAnces == null) {
+                    cAnces = entry.getKey();
+                } else {
+                    Commit c = checkOutCommit(cAnces);
+                    if (c.getDate().compareTo(entry.getValue()) < 0) {
+                        cAnces = entry.getKey();
+                    }
+                }
             }
         }
-        return closest != null ? closest.getKey() : null;
+        return cAnces;
     }
 
-    private static HashSet<String> givenGraph(String commitID,
-                                              HashSet<String> set) {
-        if (commitID == null) {
-            return set;
-        }
-        set.add(commitID);
-        Commit c = checkOutCommit(commitID);
-        String p1 = c.getParent();
-        String p2 = c.getMergeParent();
-        HashSet<String> set1 = givenGraph(p1, set);
-        HashSet<String> set2 = givenGraph(p2, set);
-        set1.addAll(set2);
-        return set1;
-    }
-    private static HashMap<String, Integer> commonAncestors(String headID,
-                                       HashSet<String> set,
-                                       HashMap<String, Integer> map,
-                                       Integer level) {
-        if (headID == null) {
+    private static HashMap<String, Date> ancestors(String id,
+                                                   HashMap<String, Date> map) {
+        if (id == null || map.containsKey(id)) {
             return map;
         }
-        if (set.contains(headID)) {
-            map.put(headID, level);
-        }
-        Commit c = checkOutCommit(headID);
+        Commit c = checkOutCommit(id);
+        map.put(id, c.getDate());
         String p1 = c.getParent();
         String p2 = c.getMergeParent();
-        HashMap<String, Integer> m1 = commonAncestors(p1, set, map, level + 1);
-        HashMap<String, Integer> m2 = commonAncestors(p2, set, map, level + 1);
-        m1.putAll(m2);
-        return m1;
+        HashMap<String, Date> map1 = ancestors(p1, map);
+        HashMap<String, Date> map2 = ancestors(p2, map);
+        map1.putAll(map2);
+
+        return map1;
     }
 
     // Helper method to traverse the commits tree and return split point.
+//    private static String splitPointID(String commitID) {
+//        HashSet<String> ancestors = new HashSet<>();
+//        String head = readContentsAsString(HEAD);
+//        return bfs(ancestors, head, commitID);
+//    }
 //    private static String bfs(HashSet<String> set,
 //                              String branch1,
 //                              String branch2) {

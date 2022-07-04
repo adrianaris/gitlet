@@ -22,7 +22,7 @@ public class Commit implements Serializable {
     private String message;
     /** Author of the Commit. */
     private String author;
-    private String date;
+    private Date date;
     private final DateFormat DATE_FORMAT = new SimpleDateFormat(
             "EEE MMM d HH:mm:ss yyy Z");
     private String parent;
@@ -43,8 +43,8 @@ public class Commit implements Serializable {
         this.parent = parent;
         this.files = files;
         this.date = parent == null
-                ? DATE_FORMAT.format(new Date(0))
-                : DATE_FORMAT.format(new Date());
+                ? new Date(0)
+                : new Date();
         id = files == null ? Utils.sha1() : Utils.sha1(files.toString());
         this.mergeParent = mergeParent;
     }
@@ -64,13 +64,16 @@ public class Commit implements Serializable {
                     + parent.substring(0, 7) + " "
                     + mergeParent.substring(0, 7));
         }
-        System.out.println("Date: " + date);
+        System.out.println("Date: " + DATE_FORMAT.format(date));
         System.out.println(message);
         System.out.println();
     }
 
     public String getParent() {
         return parent;
+    }
+    public String getMergeParent() {
+        return mergeParent;
     }
 
     public String getMessage() {
@@ -79,5 +82,9 @@ public class Commit implements Serializable {
 
     public String getId() {
         return id;
+    }
+
+    public Date getDate() {
+        return date;
     }
 }
