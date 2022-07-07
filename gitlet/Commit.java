@@ -50,7 +50,7 @@ public class Commit implements Serializable {
     }
 
     public boolean isEmpty() {
-        return files == null;
+        return files.isEmpty();
     }
     public HashMap<String, String> getFiles() {
         return files;
