@@ -591,7 +591,7 @@ public class Repository {
 //----------------------------------------------------------------------------//
    /**
     * All methods under this section are private utility methods that do not fit
-    * particularly under one of the mane methods and most of them are used in
+    * particularly under one of the main methods and most of them are used in
     * multiple locations. They are written under this module because they make
     * use of a bunch of private elements present in this class.
     */
