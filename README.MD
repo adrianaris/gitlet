@@ -1,14 +1,16 @@
 #Berkeley CS61B project 2 GITLET
 
 <p>
-  This project is a miniature git written in java.
+  Miniature git written in java.
 </p>
 <br />
 <p>
   This project came with testing infrastructure, including make file and 3 test files in /testing/samples + 
 some utility classes for de/serializing to files and reading and writting files.
-  I've added a bunch of tests of my own for the commands that have given me more trouble in the same dir.
+<br />
+  I've added a bunch of tests of my own for the commands that have given me more trouble, in the same dir.
 </p>
+<strong><a href="https://sp21.datastructur.es/materials/proj/proj2/proj2">Detailed spec here</a></strong>
 <br />
 <p>
   The work I did is what you will find in /gitlet/ respository, main and commit java files.
@@ -16,7 +18,8 @@ some utility classes for de/serializing to files and reading and writting files.
 <br />
 <ol><strong>How to run:</strong>
   <li>make</li>
-  <li><ol>java gitlet.Main [command]:
+  <li>java gitlet.Main [command]:
+  <ol>
     <li>init</li>
     <li>add [filename]</li>
     <li>commit [message]</li>
@@ -29,7 +32,8 @@ some utility classes for de/serializing to files and reading and writting files.
     <li>checkout [commitID, filename]</li>
     <li>checkout [branchName]</li>
     <li>branch</li>
+    <li>reset</li>
     <li>merge</li>
-    </ol>
+  </ol>
     </li>
 </ol>
